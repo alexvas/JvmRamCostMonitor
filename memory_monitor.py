@@ -12,7 +12,7 @@ IS_WINDOWS = platform.system() == 'Windows'
 class MemoryMonitor:
     """Класс для мониторинга потребления памяти процессами"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache: Dict[int, Dict] = {}
     
     def get_process_memory_linux(self, pid: int, include_children: bool = False) -> Dict[str, float]:

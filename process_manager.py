@@ -10,7 +10,7 @@ import re
 class ProcessManager:
     """Класс для работы с процессами и jps"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._jps_available = self._check_jps_available()
     
     def _check_jps_available(self) -> bool:
@@ -24,7 +24,7 @@ class ProcessManager:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
     
-    def get_java_processes(self) -> List[Dict[str, any]]:
+    def get_java_processes(self) -> List[Dict[str, object]]:
         """
         Получить список Java процессов через jps
         
@@ -126,7 +126,7 @@ class ProcessManager:
         except psutil.NoSuchProcess:
             return False
     
-    def get_process_info(self, pid: int) -> Optional[Dict[str, any]]:
+    def get_process_info(self, pid: int) -> Optional[Dict[str, object]]:
         """Получить информацию о процессе"""
         try:
             proc = psutil.Process(pid)

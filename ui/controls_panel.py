@@ -10,6 +10,10 @@ import ROOT
 from ROOT import TGHorizontalFrame, TGVerticalFrame, TGGroupFrame, TGTextButton
 from ROOT import TGCheckButton, TGLayoutHints, kLHintsExpandX, kLHintsLeft
 from ROOT import gSystem
+from typing import TYPE_CHECKING, Dict
+
+if TYPE_CHECKING:
+    from ui.main_window import MainWindow
 
 # Глобальный словарь для хранения ссылок на экземпляры панелей управления
 _controls_panel_instances = {}
@@ -36,7 +40,7 @@ def _on_save_clicked_wrapper():
 class ControlsPanel:
     """Панель управления"""
     
-    def __init__(self, parent, main_window):
+    def __init__(self, parent, main_window: "MainWindow"):
         self.main_window = main_window
         
         # Регистрируем экземпляр в глобальном словаре
@@ -97,7 +101,7 @@ class ControlsPanel:
         self.frame.AddFrame(self.metrics_group,
                            TGLayoutHints(kLHintsLeft | kLHintsExpandX, 2, 2, 2, 2))
     
-    def _add_metric_check(self, metric: str, label: str):
+    def _add_metric_check(self, metric: str, label: str) -> None:
         """Добавить чекбокс для метрики"""
         from config import DEFAULT_METRIC_VISIBILITY
         
@@ -116,18 +120,18 @@ class ControlsPanel:
         """Получить фрейм панели"""
         return self.frame
     
-    def get_metric_visibility(self) -> dict:
+    def get_metric_visibility(self) -> Dict[str, bool]:
         """Получить словарь видимости метрик"""
         visibility = {}
         for metric, check in self.metric_checks.items():
             visibility[metric] = check.IsOn()
         return visibility
     
-    def on_gc_clicked(self):
+    def on_gc_clicked(self) -> None:
         """Обработчик нажатия кнопки GC"""
         self.main_window.trigger_gc()
     
-    def on_heapdump_clicked(self):
+    def on_heapdump_clicked(self) -> None:
         """Обработчик нажатия кнопки Heap Dump"""
         # Простой диалог выбора файла через системный диалог
         # В PyROOT нет встроенного диалога, используем временное решение
@@ -143,7 +147,7 @@ class ControlsPanel:
         else:
             print("Ошибка создания heap dump")
     
-    def on_save_clicked(self):
+    def on_save_clicked(self) -> None:
         """Обработчик нажатия кнопки сохранения"""
         import tempfile
         import time

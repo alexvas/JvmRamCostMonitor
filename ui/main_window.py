@@ -12,7 +12,7 @@ from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
 from ROOT import gClient, gStyle
 import threading
 import time
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from collections import deque
 
 from .process_panel import ProcessPanel
@@ -59,10 +59,10 @@ class MainWindow:
         self._init_root()
         self._create_ui()
     
-    def _init_root(self):
+    def _init_root(self) -> None:
         """Инициализация ROOT"""
         if not ROOT.gApplication:
-            self.app = TApplication("ProcessRamMonitor", None, None)
+            self.app = TApplication("JvmRamCostMonitor", None, None)
         else:
             self.app = ROOT.gApplication
         
@@ -71,11 +71,11 @@ class MainWindow:
         gStyle.SetTitleFont(42, "XYZ")
         gStyle.SetLabelFont(42, "XYZ")
     
-    def _create_ui(self):
+    def _create_ui(self) -> None:
         """Создание UI"""
         # Главное окно
         self.main_frame = TGMainFrame(gClient.GetRoot(), 1200, 800)
-        self.main_frame.SetWindowName("Process RAM Cost Monitor")
+        self.main_frame.SetWindowName("Jvm RAM Cost Monitor")
         
         # Горизонтальный контейнер для панели процессов и основного контента
         hframe = TGHorizontalFrame(self.main_frame)
@@ -108,7 +108,7 @@ class MainWindow:
         self.main_frame.Resize(self.main_frame.GetDefaultSize())
         self.main_frame.MapWindow()
     
-    def start_monitoring(self, pid: int, include_children: bool = False):
+    def start_monitoring(self, pid: int, include_children: bool = False) -> None:
         """Начать мониторинг процесса"""
         self.current_pid = pid
         self.include_children = include_children
@@ -127,14 +127,14 @@ class MainWindow:
         # Подключение к JMX если это Java процесс
         self.jmx_client.connect(pid)
     
-    def stop_monitoring(self):
+    def stop_monitoring(self) -> None:
         """Остановить мониторинг"""
         self.running = False
         if self.current_pid:
             self.jmx_client.disconnect(self.current_pid)
         self.current_pid = None
     
-    def _update_loop(self):
+    def _update_loop(self) -> None:
         """Основной цикл обновления данных"""
         last_rss_update = 0
         last_pss_update = 0
@@ -245,7 +245,7 @@ class MainWindow:
             
             time.sleep(0.1)  # Небольшая задержка для снижения нагрузки
     
-    def _add_data_point(self, metric: str, value: float, pid: Optional[int] = None):
+    def _add_data_point(self, metric: str, value: float, pid: Optional[int] = None) -> None:
         """Добавить точку данных для метрики"""
         if self.process_group_mode == 'cumulative' or len(self.process_group_pids) == 1:
             # Кумулятивный режим или один процесс
@@ -260,7 +260,7 @@ class MainWindow:
             self.data_history[key] = deque(maxlen=1000)
         self.data_history[key].append(value)
     
-    def get_data(self, metric: str, pid: Optional[int] = None) -> tuple:
+    def get_data(self, metric: str, pid: Optional[int] = None) -> Tuple[List[float], List[float]]:
         """Получить данные для метрики (время, значения)"""
         if self.process_group_mode == 'separate' and pid is not None:
             key = f"{metric}_pid{pid}"
@@ -279,14 +279,14 @@ class MainWindow:
             return (times[:min_len], values[:min_len])
         return ([], [])
     
-    def set_process_group_mode(self, mode: str):
+    def set_process_group_mode(self, mode: str) -> None:
         """Установить режим отображения группы процессов"""
         self.process_group_mode = mode
         # Очистка данных при смене режима
         self.data_history.clear()
         self.time_history.clear()
     
-    def trigger_gc(self):
+    def trigger_gc(self) -> None:
         """Запустить GC"""
         if self.current_pid:
             self.jmx_client.trigger_gc(self.current_pid)
@@ -297,12 +297,12 @@ class MainWindow:
             return self.jmx_client.create_heap_dump(self.current_pid, filepath)
         return False
     
-    def save_screenshot(self, filepath: str):
+    def save_screenshot(self, filepath: str) -> None:
         """Сохранить скриншот графика"""
         if self.graph_panel:
             self.graph_panel.save_screenshot(filepath)
     
-    def run(self):
+    def run(self) -> None:
         """Запустить приложение"""
         if self.app:
             self.app.Run(True)

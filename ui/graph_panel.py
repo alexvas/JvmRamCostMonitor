@@ -5,14 +5,18 @@ import ROOT
 from ROOT import TGVerticalFrame, TRootEmbeddedCanvas, TCanvas, TGraph, TMultiGraph
 from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY
 from ROOT import gPad, gStyle
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ui.main_window import MainWindow
+
 import time
 
 
 class GraphPanel:
     """Панель с графиками"""
     
-    def __init__(self, parent, main_window):
+    def __init__(self, parent, main_window: "MainWindow"):
         self.main_window = main_window
         self.frame = TGVerticalFrame(parent)
         
@@ -65,7 +69,7 @@ class GraphPanel:
         """Получить фрейм панели"""
         return self.frame
     
-    def update_graph(self):
+    def update_graph(self) -> None:
         """Обновить график"""
         if not self.canvas:
             return
@@ -158,7 +162,7 @@ class GraphPanel:
         self.canvas.Update()
         ROOT.gSystem.ProcessEvents()
     
-    def save_screenshot(self, filepath: str):
+    def save_screenshot(self, filepath: str) -> None:
         """Сохранить скриншот графика"""
         if self.canvas:
             self.canvas.SaveAs(filepath)

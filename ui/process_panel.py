@@ -7,6 +7,10 @@ from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
 from ROOT import gClient
 import threading
 import time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ui.main_window import MainWindow
 
 # Глобальный словарь для хранения ссылок на экземпляры панелей
 _panel_instances = {}
@@ -25,13 +29,13 @@ def _refresh_processes_wrapper():
         panel = list(_panel_instances.values())[-1]
         panel.refresh_processes()
 
-def _on_process_selected_wrapper(entry_id):
+def _on_process_selected_wrapper(entry_id: int):
     """Обёртка для on_process_selected"""
     if _panel_instances:
         panel = list(_panel_instances.values())[-1]
         panel.on_process_selected(entry_id)
 
-def _on_children_toggled_wrapper(state):
+def _on_children_toggled_wrapper(state: bool):
     """Обёртка для on_children_toggled"""
     if _panel_instances:
         panel = list(_panel_instances.values())[-1]
@@ -47,7 +51,7 @@ def _on_mode_changed_wrapper():
 class ProcessPanel:
     """Панель выбора процесса"""
     
-    def __init__(self, parent, main_window):
+    def __init__(self, parent, main_window: "MainWindow"):
         self.main_window = main_window
         self.frame = TGVerticalFrame(parent)
         
@@ -114,7 +118,7 @@ class ProcessPanel:
         # Первоначальная загрузка
         self.refresh_processes()
     
-    def _start_auto_refresh(self):
+    def _start_auto_refresh(self) -> None:
         """Запустить автоматическое обновление списка процессов"""
         def refresh_loop():
             while self.refresh_running:
@@ -129,7 +133,7 @@ class ProcessPanel:
         self.refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
         self.refresh_thread.start()
     
-    def _check_ui_state(self):
+    def _check_ui_state(self) -> None:
         """Проверка состояния UI элементов и обработка событий"""
         # Проверка состояния чекбокса потомков
         current_children_state = self.children_check.IsOn()
@@ -156,7 +160,7 @@ class ProcessPanel:
         """Получить фрейм панели"""
         return self.frame
     
-    def toggle_panel(self):
+    def toggle_panel(self) -> None:
         """Переключить видимость панели"""
         self.visible = not self.visible
         if self.visible:
@@ -166,7 +170,7 @@ class ProcessPanel:
             self.frame.UnmapWindow()
             self.toggle_button.SetText("Показать панель")
     
-    def refresh_processes(self):
+    def refresh_processes(self) -> None:
         """Обновить список процессов"""
         self.processes = self.main_window.process_manager.get_java_processes()
         
@@ -181,7 +185,7 @@ class ProcessPanel:
         self.process_list.Layout()
         ROOT.gSystem.ProcessEvents()
     
-    def on_process_selected(self, entry_id):
+    def on_process_selected(self, entry_id: int):
         """Обработчик выбора процесса"""
         if 0 <= entry_id < len(self.processes):
             proc = self.processes[entry_id]
@@ -194,14 +198,14 @@ class ProcessPanel:
             include_children = self.children_check.IsOn()
             self.main_window.start_monitoring(pid, include_children)
     
-    def on_children_toggled(self, state):
+    def on_children_toggled(self, state: bool):
         """Обработчик переключения опции потомков"""
         if self.main_window.current_pid:
             include_children = bool(state)
             self.main_window.stop_monitoring()
             self.main_window.start_monitoring(self.main_window.current_pid, include_children)
     
-    def on_mode_changed(self):
+    def on_mode_changed(self) -> None:
         """Обработчик изменения режима отображения группы"""
         if self.cumulative_radio.IsOn():
             mode = 'cumulative'

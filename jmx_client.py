@@ -10,11 +10,11 @@ import platform
 class JMXClient:
     """Класс для подключения к JMX и получения метрик"""
     
-    def __init__(self):
-        self._connections: Dict[int, any] = {}  # pid -> JMX connection
+    def __init__(self) -> None:
+        self._connections: Dict[int, object] = {}  # pid -> JMX connection
         self._jvm_started = False
     
-    def _ensure_jvm(self):
+    def _ensure_jvm(self) -> None:
         """Убедиться, что JVM запущена для jpype"""
         if not self._jvm_started:
             try:
@@ -54,7 +54,7 @@ class JMXClient:
         except Exception:
             return False
     
-    def _create_local_connector(self, pid: int) -> Optional[any]:
+    def _create_local_connector(self, pid: int) -> Optional[object]:
         """Создать локальный JMX коннектор через Attach API"""
         try:
             # Используем com.sun.tools.attach.VirtualMachine
@@ -153,7 +153,7 @@ class JMXClient:
         except Exception:
             return False
     
-    def disconnect(self, pid: int):
+    def disconnect(self, pid: int) -> None:
         """Отключиться от процесса"""
         if pid in self._connections:
             try:
