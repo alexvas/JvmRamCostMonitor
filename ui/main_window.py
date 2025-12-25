@@ -3,13 +3,14 @@
 """
 import sys
 import os
+import signal
 # Добавляем родительскую директорию в путь для импорта модулей из корня проекта
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ROOT
 from ROOT import TApplication, TGMainFrame, TGHorizontalFrame, TGVerticalFrame
 from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
-from ROOT import gClient, gStyle
+from ROOT import gClient, gStyle, TPyDispatcher
 import threading
 import time
 from typing import Optional, Dict, List, Tuple
@@ -22,7 +23,6 @@ from process_manager import ProcessManager
 from memory_monitor import MemoryMonitor
 from jmx_client import JMXClient
 from config import POLL_INTERVALS, IS_LINUX, IS_WINDOWS
-
 
 class MainWindow:
     """Главное окно приложения"""
@@ -54,6 +54,11 @@ class MainWindow:
         # Таймеры для обновления данных
         self.running = False
         self.update_thread = None
+        self.closing = False  # Флаг для предотвращения повторного вызова OnCloseWindow
+        
+        # Установка обработчика сигнала для немедленного завершения
+        signal.signal(signal.SIGTERM, lambda s, f: os._exit(0))
+        signal.signal(signal.SIGINT, lambda s, f: os._exit(0))
         
         # Инициализация PyROOT
         self._init_root()
@@ -76,6 +81,12 @@ class MainWindow:
         # Главное окно
         self.main_frame = TGMainFrame(gClient.GetRoot(), 1200, 800)
         self.main_frame.SetWindowName("Jvm RAM Cost Monitor")
+        # Отключаем автоматическое закрытие окна - будем обрабатывать сами
+        self.main_frame.DontCallClose()
+        
+        # Подключаем обработчик закрытия окна через TPyDispatcher
+        self._close_dispatcher = TPyDispatcher(self.OnCloseWindow)
+        self.main_frame.Connect("CloseWindow()", "TPyDispatcher", self._close_dispatcher, "Dispatch()")
         
         # Горизонтальный контейнер для панели процессов и основного контента
         hframe = TGHorizontalFrame(self.main_frame)
@@ -142,7 +153,12 @@ class MainWindow:
         last_pws_update = 0
         last_jmx_update = 0
         
-        while self.running and self.current_pid:
+        while self.running and self.current_pid and not self.closing:
+            # Проверка состояния окна
+            if self.main_frame and self.main_frame.IsZombie():
+                self.OnCloseWindow()
+                break
+            
             current_time = time.time()
             
             # Обновление временной метки
@@ -231,8 +247,8 @@ class MainWindow:
                 
                 last_jmx_update = current_time
             
-            # Обновление графика в главном потоке
-            ROOT.gSystem.ProcessEvents()
+            # Обновление графика выполняется в главном потоке через ProcessEvents()
+            # НЕ вызываем ProcessEvents() здесь, чтобы избежать проблем с закрытием окна
             
             # Проверка состояния UI элементов
             if self.process_panel:
@@ -302,8 +318,51 @@ class MainWindow:
         if self.graph_panel:
             self.graph_panel.save_screenshot(filepath)
     
+    def OnCloseWindow(self) -> None:
+        """Обработчик закрытия окна"""
+        # НЕМЕДЛЕННОЕ завершение процесса для предотвращения segfault
+        # ROOT продолжает обрабатывать события в фоновом потоке после закрытия окна,
+        # что приводит к обращению к уничтоженным X11 виджетам
+        print("Завершено")
+        os._exit(0)
+    
     def run(self) -> None:
         """Запустить приложение"""
         if self.app:
-            self.app.Run(True)
+            # Запуск основного цикла приложения с проверкой закрытия окна
+            try:
+                while not self.closing:
+                    # Проверка состояния окна ПЕРЕД обработкой событий
+                    if self.main_frame and self.main_frame.IsZombie():
+                        self.OnCloseWindow()
+                        break
+                    
+                    # Дополнительная проверка флага перед обработкой событий
+                    if self.closing:
+                        break
+                    
+                    # Обработка событий ROOT только если окно еще открыто
+                    try:
+                        ROOT.gSystem.ProcessEvents()
+                    except:
+                        # Игнорируем ошибки при обработке событий после закрытия окна
+                        if self.closing:
+                            break
+                        raise
+                    
+                    # Проверка флага после обработки событий
+                    if self.closing:
+                        break
+                    
+                    # Небольшая задержка для снижения нагрузки на CPU
+                    time.sleep(0.01)
+            except (SystemExit, KeyboardInterrupt):
+                # Нормальное завершение
+                if not self.closing:
+                    self.OnCloseWindow()
+            except Exception as e:
+                # Ошибка при работе
+                if not self.closing:
+                    print(f"Ошибка в цикле приложения: {e}", file=sys.stderr)
+                    self.OnCloseWindow()
 
