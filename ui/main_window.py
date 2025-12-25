@@ -253,8 +253,6 @@ class MainWindow:
             # Проверка состояния UI элементов
             if self.process_panel:
                 self.process_panel._check_ui_state()
-            if self.controls_panel:
-                self.controls_panel._check_ui_state()
             
             if self.graph_panel:
                 self.graph_panel.update_graph()

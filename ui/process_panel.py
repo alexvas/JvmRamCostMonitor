@@ -4,49 +4,13 @@
 import ROOT
 from ROOT import TGVerticalFrame, TGGroupFrame, TGListBox, TGTextButton
 from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
-from ROOT import gClient
+from ROOT import gClient, TPyDispatcher
 import threading
 import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ui.main_window import MainWindow
-
-# Глобальный словарь для хранения ссылок на экземпляры панелей
-_panel_instances = {}
-
-def _toggle_panel_wrapper():
-    """Обёртка для toggle_panel"""
-    # Получаем последний созданный экземпляр (упрощённый подход)
-    # В реальности нужно использовать более надёжный механизм
-    if _panel_instances:
-        panel = list(_panel_instances.values())[-1]
-        panel.toggle_panel()
-
-def _refresh_processes_wrapper():
-    """Обёртка для refresh_processes"""
-    if _panel_instances:
-        panel = list(_panel_instances.values())[-1]
-        panel.refresh_processes()
-
-def _on_process_selected_wrapper(entry_id: int):
-    """Обёртка для on_process_selected"""
-    if _panel_instances:
-        panel = list(_panel_instances.values())[-1]
-        panel.on_process_selected(entry_id)
-
-def _on_children_toggled_wrapper(state: bool):
-    """Обёртка для on_children_toggled"""
-    if _panel_instances:
-        panel = list(_panel_instances.values())[-1]
-        panel.on_children_toggled(state)
-
-def _on_mode_changed_wrapper():
-    """Обёртка для on_mode_changed"""
-    if _panel_instances:
-        panel = list(_panel_instances.values())[-1]
-        panel.on_mode_changed()
-
 
 class ProcessPanel:
     """Панель выбора процесса"""
@@ -55,12 +19,10 @@ class ProcessPanel:
         self.main_window = main_window
         self.frame = TGVerticalFrame(parent)
         
-        # Регистрируем экземпляр в глобальном словаре
-        _panel_instances[id(self)] = self
-        
         # Кнопка скрытия/показа
         self.toggle_button = TGTextButton(self.frame, "Скрыть панель")
-        self.toggle_button_clicked = False
+        self._toggle_dispatcher = TPyDispatcher(self.toggle_panel)
+        self.toggle_button.Connect("Clicked()", "TPyDispatcher", self._toggle_dispatcher, "Dispatch()")
         self.frame.AddFrame(self.toggle_button,
                            TGLayoutHints(kLHintsExpandX, 2, 2, 2, 2))
         
@@ -75,7 +37,8 @@ class ProcessPanel:
         
         # Кнопка обновления списка
         self.refresh_button = TGTextButton(self.process_group, "Обновить")
-        self.refresh_button_clicked = False
+        self._refresh_dispatcher = TPyDispatcher(self.refresh_processes)
+        self.refresh_button.Connect("Clicked()", "TPyDispatcher", self._refresh_dispatcher, "Dispatch()")
         self.process_group.AddFrame(self.refresh_button,
                                    TGLayoutHints(kLHintsExpandX, 2, 2, 2, 2))
         
@@ -121,20 +84,30 @@ class ProcessPanel:
     def _start_auto_refresh(self) -> None:
         """Запустить автоматическое обновление списка процессов"""
         def refresh_loop():
+            last_refresh_time = 0
             while self.refresh_running:
-                time.sleep(0.1)  # Проверка каждые 100мс
-                if self.visible:
-                    ROOT.gSystem.ProcessEvents()
-                    self._check_ui_state()
+                # Проверка флага закрытия приложения
+                if hasattr(self.main_window, 'closing') and self.main_window.closing:
+                    break
+                
+                time.sleep(0.5)  # Проверка каждые 500мс
+                
                 # Автообновление списка каждые 5 секунд
-                if int(time.time()) % 5 == 0:
-                    self.refresh_processes()
+                current_time = time.time()
+                if current_time - last_refresh_time >= 5:
+                    if self.visible:
+                        self.refresh_processes()
+                    last_refresh_time = current_time
         
         self.refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
         self.refresh_thread.start()
     
     def _check_ui_state(self) -> None:
         """Проверка состояния UI элементов и обработка событий"""
+        # Проверка флага закрытия приложения
+        if hasattr(self.main_window, 'closing') and self.main_window.closing:
+            return
+        
         # Проверка состояния чекбокса потомков
         current_children_state = self.children_check.IsOn()
         if current_children_state != self.last_children_state:
@@ -183,7 +156,7 @@ class ProcessPanel:
             self.process_list.AddEntry(display_text, i)
         
         self.process_list.Layout()
-        ROOT.gSystem.ProcessEvents()
+        # ProcessEvents() вызывается в главном цикле приложения
     
     def on_process_selected(self, entry_id: int):
         """Обработчик выбора процесса"""

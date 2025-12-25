@@ -9,42 +9,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import ROOT
 from ROOT import TGHorizontalFrame, TGVerticalFrame, TGGroupFrame, TGTextButton
 from ROOT import TGCheckButton, TGLayoutHints, kLHintsExpandX, kLHintsLeft
-from ROOT import gSystem
+from ROOT import gSystem, TPyDispatcher
 from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
     from ui.main_window import MainWindow
-
-# Глобальный словарь для хранения ссылок на экземпляры панелей управления
-_controls_panel_instances = {}
-
-def _on_gc_clicked_wrapper():
-    """Обёртка для on_gc_clicked"""
-    if _controls_panel_instances:
-        panel = list(_controls_panel_instances.values())[-1]
-        panel.on_gc_clicked()
-
-def _on_heapdump_clicked_wrapper():
-    """Обёртка для on_heapdump_clicked"""
-    if _controls_panel_instances:
-        panel = list(_controls_panel_instances.values())[-1]
-        panel.on_heapdump_clicked()
-
-def _on_save_clicked_wrapper():
-    """Обёртка для on_save_clicked"""
-    if _controls_panel_instances:
-        panel = list(_controls_panel_instances.values())[-1]
-        panel.on_save_clicked()
-
 
 class ControlsPanel:
     """Панель управления"""
     
     def __init__(self, parent, main_window: "MainWindow"):
         self.main_window = main_window
-        
-        # Регистрируем экземпляр в глобальном словаре
-        _controls_panel_instances[id(self)] = self
         
         # Горизонтальный контейнер
         self.frame = TGHorizontalFrame(parent)
@@ -54,19 +29,22 @@ class ControlsPanel:
         
         # Кнопка GC
         self.gc_button = TGTextButton(self.actions_group, "GC")
-        self.gc_button_clicked = False
+        self._gc_dispatcher = TPyDispatcher(self.on_gc_clicked)
+        self.gc_button.Connect("Clicked()", "TPyDispatcher", self._gc_dispatcher, "Dispatch()")
         self.actions_group.AddFrame(self.gc_button,
                                     TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
         # Кнопка HeapDump
         self.heapdump_button = TGTextButton(self.actions_group, "Heap Dump")
-        self.heapdump_button_clicked = False
+        self._heapdump_dispatcher = TPyDispatcher(self.on_heapdump_clicked)
+        self.heapdump_button.Connect("Clicked()", "TPyDispatcher", self._heapdump_dispatcher, "Dispatch()")
         self.actions_group.AddFrame(self.heapdump_button,
                                     TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
         # Кнопка сохранения скриншота
         self.save_button = TGTextButton(self.actions_group, "Сохранить график")
-        self.save_button_clicked = False
+        self._save_dispatcher = TPyDispatcher(self.on_save_clicked)
+        self.save_button.Connect("Clicked()", "TPyDispatcher", self._save_dispatcher, "Dispatch()")
         self.actions_group.AddFrame(self.save_button,
                                     TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
