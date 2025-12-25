@@ -1,9 +1,14 @@
 """
 Главное окно приложения на PyROOT
 """
+import sys
+import os
+# Добавляем родительскую директорию в путь для импорта модулей из корня проекта
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import ROOT
 from ROOT import TApplication, TGMainFrame, TGHorizontalFrame, TGVerticalFrame
-from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY
+from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
 from ROOT import gClient, gStyle
 import threading
 import time
@@ -13,10 +18,10 @@ from collections import deque
 from .process_panel import ProcessPanel
 from .graph_panel import GraphPanel
 from .controls_panel import ControlsPanel
-from ..process_manager import ProcessManager
-from ..memory_monitor import MemoryMonitor
-from ..jmx_client import JMXClient
-from ..config import POLL_INTERVALS, IS_LINUX, IS_WINDOWS
+from process_manager import ProcessManager
+from memory_monitor import MemoryMonitor
+from jmx_client import JMXClient
+from config import POLL_INTERVALS, IS_LINUX, IS_WINDOWS
 
 
 class MainWindow:
@@ -228,10 +233,17 @@ class MainWindow:
             
             # Обновление графика в главном потоке
             ROOT.gSystem.ProcessEvents()
+            
+            # Проверка состояния UI элементов
+            if self.process_panel:
+                self.process_panel._check_ui_state()
+            if self.controls_panel:
+                self.controls_panel._check_ui_state()
+            
             if self.graph_panel:
                 self.graph_panel.update_graph()
             
-            time.sleep(0.5)  # Небольшая задержка для снижения нагрузки
+            time.sleep(0.1)  # Небольшая задержка для снижения нагрузки
     
     def _add_data_point(self, metric: str, value: float, pid: Optional[int] = None):
         """Добавить точку данных для метрики"""

@@ -1,11 +1,36 @@
 """
 Панель управления: кнопки GC, HeapDump, сохранение, настройки метрик
 """
+import sys
+import os
+# Добавляем родительскую директорию в путь для импорта модулей из корня проекта
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import ROOT
 from ROOT import TGHorizontalFrame, TGVerticalFrame, TGGroupFrame, TGTextButton
-from ROOT import TGCheckButton, TGLayoutHints, kLHintsExpandX
+from ROOT import TGCheckButton, TGLayoutHints, kLHintsExpandX, kLHintsLeft
 from ROOT import gSystem
-import os
+
+# Глобальный словарь для хранения ссылок на экземпляры панелей управления
+_controls_panel_instances = {}
+
+def _on_gc_clicked_wrapper():
+    """Обёртка для on_gc_clicked"""
+    if _controls_panel_instances:
+        panel = list(_controls_panel_instances.values())[-1]
+        panel.on_gc_clicked()
+
+def _on_heapdump_clicked_wrapper():
+    """Обёртка для on_heapdump_clicked"""
+    if _controls_panel_instances:
+        panel = list(_controls_panel_instances.values())[-1]
+        panel.on_heapdump_clicked()
+
+def _on_save_clicked_wrapper():
+    """Обёртка для on_save_clicked"""
+    if _controls_panel_instances:
+        panel = list(_controls_panel_instances.values())[-1]
+        panel.on_save_clicked()
 
 
 class ControlsPanel:
@@ -13,6 +38,9 @@ class ControlsPanel:
     
     def __init__(self, parent, main_window):
         self.main_window = main_window
+        
+        # Регистрируем экземпляр в глобальном словаре
+        _controls_panel_instances[id(self)] = self
         
         # Горизонтальный контейнер
         self.frame = TGHorizontalFrame(parent)
@@ -22,19 +50,19 @@ class ControlsPanel:
         
         # Кнопка GC
         self.gc_button = TGTextButton(self.actions_group, "GC")
-        self.gc_button.Connect("Clicked()", "ControlsPanel", self, "on_gc_clicked()")
+        self.gc_button_clicked = False
         self.actions_group.AddFrame(self.gc_button,
                                     TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
         # Кнопка HeapDump
         self.heapdump_button = TGTextButton(self.actions_group, "Heap Dump")
-        self.heapdump_button.Connect("Clicked()", "ControlsPanel", self, "on_heapdump_clicked()")
+        self.heapdump_button_clicked = False
         self.actions_group.AddFrame(self.heapdump_button,
                                     TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
         # Кнопка сохранения скриншота
         self.save_button = TGTextButton(self.actions_group, "Сохранить график")
-        self.save_button.Connect("Clicked()", "ControlsPanel", self, "on_save_clicked()")
+        self.save_button_clicked = False
         self.actions_group.AddFrame(self.save_button,
                                     TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
@@ -47,7 +75,7 @@ class ControlsPanel:
         # Чекбоксы для метрик
         self.metric_checks = {}
         
-        from ..config import DEFAULT_METRIC_VISIBILITY, IS_LINUX, IS_WINDOWS
+        from config import DEFAULT_METRIC_VISIBILITY, IS_LINUX, IS_WINDOWS
         
         # Linux метрики
         if IS_LINUX:
@@ -71,7 +99,7 @@ class ControlsPanel:
     
     def _add_metric_check(self, metric: str, label: str):
         """Добавить чекбокс для метрики"""
-        from ..config import DEFAULT_METRIC_VISIBILITY
+        from config import DEFAULT_METRIC_VISIBILITY
         
         check = TGCheckButton(self.metrics_group, label)
         default_visible = DEFAULT_METRIC_VISIBILITY.get(metric, True)
