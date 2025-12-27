@@ -1,5 +1,5 @@
 """
-Главное окно приложения на PyROOT
+Главное окно приложения на PyQt5
 """
 import sys
 import os
@@ -7,10 +7,9 @@ import signal
 # Добавляем родительскую директорию в путь для импорта модулей из корня проекта
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import ROOT
-from ROOT import TApplication, TGMainFrame, TGHorizontalFrame, TGVerticalFrame
-from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
-from ROOT import gClient, gStyle, TPyDispatcher
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QCloseEvent
 import threading
 import time
 from typing import Optional, Dict, List, Tuple
@@ -24,15 +23,13 @@ from memory_monitor import MemoryMonitor
 from jmx_client import JMXClient
 from config import POLL_INTERVALS, IS_LINUX, IS_WINDOWS
 
-class MainWindow:
+class MainWindow(QMainWindow):
     """Главное окно приложения"""
     
     def __init__(self):
-        self.app = None
-        self.main_frame = None
-        self.process_panel = None
-        self.graph_panel = None
-        self.controls_panel = None
+        super().__init__()
+        self.setWindowTitle("Jvm RAM Cost Monitor")
+        self.setGeometry(100, 100, 1200, 800)
         
         # Менеджеры
         self.process_manager = ProcessManager()
@@ -53,71 +50,48 @@ class MainWindow:
         
         # Таймеры для обновления данных
         self.running = False
-        self.update_thread = None
-        self.closing = False  # Флаг для предотвращения повторного вызова OnCloseWindow
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self._update_data)
         
-        # Установка обработчика сигнала для немедленного завершения
-        signal.signal(signal.SIGTERM, lambda s, f: os._exit(0))
-        signal.signal(signal.SIGINT, lambda s, f: os._exit(0))
+        # Переменные для отслеживания времени последнего обновления
+        self.last_rss_update = 0
+        self.last_pss_update = 0
+        self.last_ws_update = 0
+        self.last_pws_update = 0
+        self.last_jmx_update = 0
         
-        # Инициализация PyROOT
-        self._init_root()
+        # Установка обработчика сигнала для корректного завершения
+        signal.signal(signal.SIGTERM, lambda s, f: self.close())
+        signal.signal(signal.SIGINT, lambda s, f: self.close())
+        
         self._create_ui()
-    
-    def _init_root(self) -> None:
-        """Инициализация ROOT"""
-        if not ROOT.gApplication:
-            self.app = TApplication("JvmRamCostMonitor", None, None)
-        else:
-            self.app = ROOT.gApplication
-        
-        # Настройка стиля
-        gStyle.SetOptStat(0)
-        gStyle.SetTitleFont(42, "XYZ")
-        gStyle.SetLabelFont(42, "XYZ")
     
     def _create_ui(self) -> None:
         """Создание UI"""
-        # Главное окно
-        self.main_frame = TGMainFrame(gClient.GetRoot(), 1200, 800)
-        self.main_frame.SetWindowName("Jvm RAM Cost Monitor")
-        # Отключаем автоматическое закрытие окна - будем обрабатывать сами
-        self.main_frame.DontCallClose()
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
         
-        # Подключаем обработчик закрытия окна через TPyDispatcher
-        self._close_dispatcher = TPyDispatcher(self.OnCloseWindow)
-        self.main_frame.Connect("CloseWindow()", "TPyDispatcher", self._close_dispatcher, "Dispatch()")
-        
-        # Горизонтальный контейнер для панели процессов и основного контента
-        hframe = TGHorizontalFrame(self.main_frame)
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(5, 5, 5, 5)
         
         # Панель процессов (слева)
-        self.process_panel = ProcessPanel(hframe, self)
-        hframe.AddFrame(self.process_panel.get_frame(), 
-                       TGLayoutHints(kLHintsLeft | kLHintsExpandY, 2, 2, 2, 2))
+        self.process_panel = ProcessPanel(self)
+        main_layout.addWidget(self.process_panel)
         
         # Вертикальный контейнер для графика и панели управления
-        vframe = TGVerticalFrame(hframe)
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(5, 5, 5, 5)
         
         # Панель графиков
-        self.graph_panel = GraphPanel(vframe, self)
-        vframe.AddFrame(self.graph_panel.get_frame(),
-                       TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2))
+        self.graph_panel = GraphPanel(self)
+        right_layout.addWidget(self.graph_panel, stretch=1)
         
         # Панель управления
-        self.controls_panel = ControlsPanel(vframe, self)
-        vframe.AddFrame(self.controls_panel.get_frame(),
-                       TGLayoutHints(kLHintsExpandX, 2, 2, 2, 2))
+        self.controls_panel = ControlsPanel(self)
+        right_layout.addWidget(self.controls_panel)
         
-        hframe.AddFrame(vframe,
-                       TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2))
-        
-        self.main_frame.AddFrame(hframe,
-                                TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2))
-        
-        self.main_frame.MapSubwindows()
-        self.main_frame.Resize(self.main_frame.GetDefaultSize())
-        self.main_frame.MapWindow()
+        main_layout.addWidget(right_widget, stretch=1)
     
     def start_monitoring(self, pid: int, include_children: bool = False) -> None:
         """Начать мониторинг процесса"""
@@ -132,8 +106,8 @@ class MainWindow:
         
         if not self.running:
             self.running = True
-            self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
-            self.update_thread.start()
+            # Запускаем таймер для обновления данных каждые 100мс
+            self.update_timer.start(100)
         
         # Подключение к JMX если это Java процесс
         self.jmx_client.connect(pid)
@@ -141,123 +115,107 @@ class MainWindow:
     def stop_monitoring(self) -> None:
         """Остановить мониторинг"""
         self.running = False
+        self.update_timer.stop()
         if self.current_pid:
             self.jmx_client.disconnect(self.current_pid)
         self.current_pid = None
     
-    def _update_loop(self) -> None:
-        """Основной цикл обновления данных"""
-        last_rss_update = 0
-        last_pss_update = 0
-        last_ws_update = 0
-        last_pws_update = 0
-        last_jmx_update = 0
+    def _update_data(self) -> None:
+        """Обновление данных (вызывается таймером)"""
+        if not self.running or not self.current_pid:
+            return
         
-        while self.running and self.current_pid and not self.closing:
-            # Проверка состояния окна
-            if self.main_frame and self.main_frame.IsZombie():
-                self.OnCloseWindow()
-                break
-            
-            current_time = time.time()
-            
-            # Обновление временной метки
-            self.time_history.append(current_time)
-            
-            # RSS (Linux) / WS (Windows) - каждые 5 сек
-            if current_time - last_rss_update >= POLL_INTERVALS['rss']:
-                if self.process_group_mode == 'separate' and len(self.process_group_pids) > 1:
-                    # Раздельный режим - собираем данные для каждого процесса
-                    for proc_pid in self.process_group_pids:
-                        if IS_LINUX:
-                            mem_data = self.memory_monitor.get_process_memory_linux(
-                                proc_pid, False)  # Без потомков, так как уже в группе
-                            if 'rss' in mem_data:
-                                self._add_data_point('rss', mem_data['rss'], proc_pid)
-                        elif IS_WINDOWS:
-                            mem_data = self.memory_monitor.get_process_memory_windows(
-                                proc_pid, False)
-                            if 'ws' in mem_data:
-                                self._add_data_point('ws', mem_data['ws'], proc_pid)
-                else:
-                    # Кумулятивный режим
+        current_time = time.time()
+        
+        # Обновление временной метки
+        self.time_history.append(current_time)
+        
+        # RSS (Linux) / WS (Windows) - каждые 5 сек
+        if current_time - self.last_rss_update >= POLL_INTERVALS['rss']:
+            if self.process_group_mode == 'separate' and len(self.process_group_pids) > 1:
+                # Раздельный режим - собираем данные для каждого процесса
+                for proc_pid in self.process_group_pids:
                     if IS_LINUX:
                         mem_data = self.memory_monitor.get_process_memory_linux(
-                            self.current_pid, self.include_children)
+                            proc_pid, False)  # Без потомков, так как уже в группе
                         if 'rss' in mem_data:
-                            self._add_data_point('rss', mem_data['rss'])
+                            self._add_data_point('rss', mem_data['rss'], proc_pid)
                     elif IS_WINDOWS:
                         mem_data = self.memory_monitor.get_process_memory_windows(
-                            self.current_pid, self.include_children)
+                            proc_pid, False)
                         if 'ws' in mem_data:
-                            self._add_data_point('ws', mem_data['ws'])
-                last_rss_update = current_time
-            
-            # PSS/USS (Linux) - каждые 30 сек
-            if IS_LINUX and current_time - last_pss_update >= POLL_INTERVALS['pss']:
-                if self.process_group_mode == 'separate' and len(self.process_group_pids) > 1:
-                    # Раздельный режим
-                    for proc_pid in self.process_group_pids:
-                        mem_data = self.memory_monitor.get_process_memory_linux(proc_pid, False)
-                        if 'pss' in mem_data:
-                            self._add_data_point('pss', mem_data['pss'], proc_pid)
-                        if 'uss' in mem_data:
-                            self._add_data_point('uss', mem_data['uss'], proc_pid)
-                else:
-                    # Кумулятивный режим
+                            self._add_data_point('ws', mem_data['ws'], proc_pid)
+            else:
+                # Кумулятивный режим
+                if IS_LINUX:
                     mem_data = self.memory_monitor.get_process_memory_linux(
                         self.current_pid, self.include_children)
-                    if 'pss' in mem_data:
-                        self._add_data_point('pss', mem_data['pss'])
-                    if 'uss' in mem_data:
-                        self._add_data_point('uss', mem_data['uss'])
-                last_pss_update = current_time
-            
-            # PWS/PB (Windows) - каждые 10 сек
-            if IS_WINDOWS and current_time - last_pws_update >= POLL_INTERVALS['pws']:
-                if self.process_group_mode == 'separate' and len(self.process_group_pids) > 1:
-                    # Раздельный режим
-                    for proc_pid in self.process_group_pids:
-                        mem_data = self.memory_monitor.get_process_memory_windows(proc_pid, False)
-                        if 'pws' in mem_data:
-                            self._add_data_point('pws', mem_data['pws'], proc_pid)
-                        if 'pb' in mem_data:
-                            self._add_data_point('pb', mem_data['pb'], proc_pid)
-                else:
-                    # Кумулятивный режим
+                    if 'rss' in mem_data:
+                        self._add_data_point('rss', mem_data['rss'])
+                elif IS_WINDOWS:
                     mem_data = self.memory_monitor.get_process_memory_windows(
                         self.current_pid, self.include_children)
+                    if 'ws' in mem_data:
+                        self._add_data_point('ws', mem_data['ws'])
+            self.last_rss_update = current_time
+        
+        # PSS/USS (Linux) - каждые 30 сек
+        if IS_LINUX and current_time - self.last_pss_update >= POLL_INTERVALS['pss']:
+            if self.process_group_mode == 'separate' and len(self.process_group_pids) > 1:
+                # Раздельный режим
+                for proc_pid in self.process_group_pids:
+                    mem_data = self.memory_monitor.get_process_memory_linux(proc_pid, False)
+                    if 'pss' in mem_data:
+                        self._add_data_point('pss', mem_data['pss'], proc_pid)
+                    if 'uss' in mem_data:
+                        self._add_data_point('uss', mem_data['uss'], proc_pid)
+            else:
+                # Кумулятивный режим
+                mem_data = self.memory_monitor.get_process_memory_linux(
+                    self.current_pid, self.include_children)
+                if 'pss' in mem_data:
+                    self._add_data_point('pss', mem_data['pss'])
+                if 'uss' in mem_data:
+                    self._add_data_point('uss', mem_data['uss'])
+            self.last_pss_update = current_time
+        
+        # PWS/PB (Windows) - каждые 10 сек
+        if IS_WINDOWS and current_time - self.last_pws_update >= POLL_INTERVALS['pws']:
+            if self.process_group_mode == 'separate' and len(self.process_group_pids) > 1:
+                # Раздельный режим
+                for proc_pid in self.process_group_pids:
+                    mem_data = self.memory_monitor.get_process_memory_windows(proc_pid, False)
                     if 'pws' in mem_data:
-                        self._add_data_point('pws', mem_data['pws'])
+                        self._add_data_point('pws', mem_data['pws'], proc_pid)
                     if 'pb' in mem_data:
-                        self._add_data_point('pb', mem_data['pb'])
-                last_pws_update = current_time
+                        self._add_data_point('pb', mem_data['pb'], proc_pid)
+            else:
+                # Кумулятивный режим
+                mem_data = self.memory_monitor.get_process_memory_windows(
+                    self.current_pid, self.include_children)
+                if 'pws' in mem_data:
+                    self._add_data_point('pws', mem_data['pws'])
+                if 'pb' in mem_data:
+                    self._add_data_point('pb', mem_data['pb'])
+            self.last_pws_update = current_time
+        
+        # JMX метрики - каждые 5 сек
+        if current_time - self.last_jmx_update >= POLL_INTERVALS['jmx']:
+            heap_data = self.jmx_client.get_heap_metrics(self.current_pid)
+            if 'heap_used' in heap_data:
+                self._add_data_point('heap_used', heap_data['heap_used'])
+            if 'heap_committed' in heap_data:
+                self._add_data_point('heap_committed', heap_data['heap_committed'])
             
-            # JMX метрики - каждые 5 сек
-            if current_time - last_jmx_update >= POLL_INTERVALS['jmx']:
-                heap_data = self.jmx_client.get_heap_metrics(self.current_pid)
-                if 'heap_used' in heap_data:
-                    self._add_data_point('heap_used', heap_data['heap_used'])
-                if 'heap_committed' in heap_data:
-                    self._add_data_point('heap_committed', heap_data['heap_committed'])
-                
-                nmt_data = self.jmx_client.get_nmt_metrics(self.current_pid)
-                if 'nmt_total' in nmt_data:
-                    self._add_data_point('nmt', nmt_data['nmt_total'])
-                
-                last_jmx_update = current_time
+            nmt_data = self.jmx_client.get_nmt_metrics(self.current_pid)
+            if 'nmt_total' in nmt_data:
+                self._add_data_point('nmt', nmt_data['nmt_total'])
             
-            # Обновление графика выполняется в главном потоке через ProcessEvents()
-            # НЕ вызываем ProcessEvents() здесь, чтобы избежать проблем с закрытием окна
-            
-            # Проверка состояния UI элементов
-            if self.process_panel:
-                self.process_panel._check_ui_state()
-            
-            if self.graph_panel:
-                self.graph_panel.update_graph()
-            
-            time.sleep(0.1)  # Небольшая задержка для снижения нагрузки
+            self.last_jmx_update = current_time
+        
+        # Обновление графика
+        if self.graph_panel:
+            self.graph_panel.update_graph()
     
     def _add_data_point(self, metric: str, value: float, pid: Optional[int] = None) -> None:
         """Добавить точку данных для метрики"""
@@ -316,51 +274,7 @@ class MainWindow:
         if self.graph_panel:
             self.graph_panel.save_screenshot(filepath)
     
-    def OnCloseWindow(self) -> None:
+    def closeEvent(self, a0: QCloseEvent):
         """Обработчик закрытия окна"""
-        # НЕМЕДЛЕННОЕ завершение процесса для предотвращения segfault
-        # ROOT продолжает обрабатывать события в фоновом потоке после закрытия окна,
-        # что приводит к обращению к уничтоженным X11 виджетам
-        print("Завершено")
-        os._exit(0)
-    
-    def run(self) -> None:
-        """Запустить приложение"""
-        if self.app:
-            # Запуск основного цикла приложения с проверкой закрытия окна
-            try:
-                while not self.closing:
-                    # Проверка состояния окна ПЕРЕД обработкой событий
-                    if self.main_frame and self.main_frame.IsZombie():
-                        self.OnCloseWindow()
-                        break
-                    
-                    # Дополнительная проверка флага перед обработкой событий
-                    if self.closing:
-                        break
-                    
-                    # Обработка событий ROOT только если окно еще открыто
-                    try:
-                        ROOT.gSystem.ProcessEvents()
-                    except:
-                        # Игнорируем ошибки при обработке событий после закрытия окна
-                        if self.closing:
-                            break
-                        raise
-                    
-                    # Проверка флага после обработки событий
-                    if self.closing:
-                        break
-                    
-                    # Небольшая задержка для снижения нагрузки на CPU
-                    time.sleep(0.01)
-            except (SystemExit, KeyboardInterrupt):
-                # Нормальное завершение
-                if not self.closing:
-                    self.OnCloseWindow()
-            except Exception as e:
-                # Ошибка при работе
-                if not self.closing:
-                    print(f"Ошибка в цикле приложения: {e}", file=sys.stderr)
-                    self.OnCloseWindow()
-
+        self.stop_monitoring()
+        a0.accept()

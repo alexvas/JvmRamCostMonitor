@@ -3,16 +3,19 @@
 Точка входа приложения JvmRamCostMonitor
 """
 import sys
-import ROOT
+from PyQt5.QtWidgets import QApplication
 from ui.main_window import MainWindow
 
 
 def main():
     """Главная функция"""
+    app = QApplication(sys.argv)
+    
     try:
         # Создание и запуск главного окна
         window = MainWindow()
-        window.run()
+        window.show()
+        sys.exit(app.exec_())
     except KeyboardInterrupt:
         print("\nПриложение завершено пользователем")
         sys.exit(0)
