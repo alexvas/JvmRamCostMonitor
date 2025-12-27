@@ -1,7 +1,7 @@
 """
 Панель выбора процесса (слева)
 """
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QPushButton, QGroupBox,
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QGroupBox,
                              QListWidget, QCheckBox, QRadioButton, QButtonGroup)
 from PyQt5.QtCore import Qt, QTimer
 from typing import TYPE_CHECKING
@@ -17,13 +17,20 @@ class ProcessPanel(QWidget):
         super().__init__()
         self.main_window = main_window
         
-        layout = QVBoxLayout(self)
+        # Основной layout для контейнера
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Контейнер для содержимого панели
+        self.content_widget = QWidget()
+        layout = QVBoxLayout(self.content_widget)
         layout.setContentsMargins(5, 5, 5, 5)
         
-        # Кнопка скрытия/показа
-        self.toggle_button = QPushButton("Скрыть панель")
-        self.toggle_button.clicked.connect(self.toggle_panel)
-        layout.addWidget(self.toggle_button)
+        # Кнопка скрытия панели (внутри панели)
+        self.hide_button = QPushButton("Скрыть панель")
+        self.hide_button.clicked.connect(self.hide_panel)
+        layout.addWidget(self.hide_button)
         
         # Группа выбора процесса
         process_group = QGroupBox("Java процессы")
@@ -71,6 +78,18 @@ class ProcessPanel(QWidget):
         
         layout.addStretch()
         
+        # Узкая кнопка для показа панели (видна только когда панель скрыта)
+        # Используем абсолютное позиционирование, чтобы она всегда была видна
+        self.show_button = QPushButton("▶", self)
+        self.show_button.setFixedSize(30, 30)
+        self.show_button.setToolTip("Показать панель")
+        self.show_button.clicked.connect(self.show_panel)
+        self.show_button.hide()  # По умолчанию скрыта
+        self.show_button.move(0, 0)  # Позиционируем в левом верхнем углу
+        
+        # Добавляем содержимое панели в основной layout
+        main_layout.addWidget(self.content_widget)
+        
         self.visible = True
         self.processes = []
         
@@ -81,12 +100,30 @@ class ProcessPanel(QWidget):
         
         # Первоначальная загрузка
         self.refresh_processes()
-    
-    def toggle_panel(self) -> None:
-        """Переключить видимость панели"""
-        self.visible = not self.visible
-        self.setVisible(self.visible)
-        self.toggle_button.setText("Показать панель" if not self.visible else "Скрыть панель")
+
+
+    def show_panel(self) -> None:
+        """Показать панель"""
+        self.visible = True
+        # Скрываем узкую кнопку.
+        self.show_button.hide()
+        # Показываем панель.
+        self.content_widget.show()
+        # Восстанавливаем нормальные размеры (снимаем фиксированный размер)
+        self.setMinimumSize(0, 0)
+        self.setMaximumSize(16777215, 16777215)
+
+    def hide_panel(self) -> None:
+        """Скрыть панель"""
+        self.visible = False
+        # Скрываем панель.
+        self.content_widget.hide()
+        # Устанавливаем фиксированный размер для панели, чтобы узкая кнопка была видна
+        self.setFixedSize(30, 30)
+        # Показываем узкую кнопку.
+        self.show_button.show()
+        self.show_button.move(0, 0)
+        self.show_button.raise_()
     
     def refresh_processes(self) -> None:
         """Обновить список процессов"""
@@ -123,7 +160,7 @@ class ProcessPanel(QWidget):
         if selected_index >= 0:
             self.process_list.setCurrentRow(selected_index)
     
-    def on_process_selected(self):
+    def on_process_selected(self) -> None:
         """Обработчик выбора процесса"""
         current_item = self.process_list.currentItem()
         if current_item:
@@ -139,14 +176,14 @@ class ProcessPanel(QWidget):
                 include_children = self.children_check.isChecked()
                 self.main_window.start_monitoring(pid, include_children)
     
-    def on_children_toggled(self, state):
+    def on_children_toggled(self, state: int) -> None:
         """Обработчик переключения опции потомков"""
         if self.main_window.current_pid:
             include_children = bool(state)
             self.main_window.stop_monitoring()
             self.main_window.start_monitoring(self.main_window.current_pid, include_children)
     
-    def on_mode_changed(self, button):
+    def on_mode_changed(self, button: QRadioButton) -> None:
         """Обработчик изменения режима отображения группы"""
         mode = 'cumulative' if button == self.cumulative_radio else 'separate'
         if mode != self.last_mode:

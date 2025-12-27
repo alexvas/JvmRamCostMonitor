@@ -76,7 +76,10 @@ class MainWindow(QMainWindow):
         
         # Панель процессов (слева)
         self.process_panel = ProcessPanel(self)
-        main_layout.addWidget(self.process_panel)
+        # Выравниваем панель по верхнему краю, чтобы узкая кнопка была вверху
+        # Используем getattr для получения константы AlignTop
+        align_top = getattr(Qt, 'AlignTop', 0x0001)
+        main_layout.addWidget(self.process_panel, stretch=0, alignment=align_top)  # type: ignore
         
         # Вертикальный контейнер для графика и панели управления
         right_widget = QWidget()
