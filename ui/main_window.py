@@ -274,7 +274,8 @@ class MainWindow(QMainWindow):
         if self.graph_panel:
             self.graph_panel.save_screenshot(filepath)
     
-    def closeEvent(self, a0: QCloseEvent):
+    def closeEvent(self, a0: Optional[QCloseEvent]) -> None:
         """Обработчик закрытия окна"""
         self.stop_monitoring()
-        a0.accept()
+        if a0:
+            a0.accept()

@@ -2,9 +2,7 @@
 JMX клиент для получения метрик Java процессов
 """
 import jpype
-import jpype.imports
 from typing import Dict, Optional
-import platform
 
 
 class JMXClient:

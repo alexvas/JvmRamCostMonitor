@@ -4,8 +4,7 @@
 import subprocess
 import psutil
 from dataclasses import dataclass
-from typing import List, Dict, Optional, Tuple
-import re
+from typing import List, Dict, Optional
 
 
 @dataclass

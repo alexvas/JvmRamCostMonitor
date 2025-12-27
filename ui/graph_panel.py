@@ -2,12 +2,10 @@
 Панель с графиками памяти
 """
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
-from PyQt5.QtCore import Qt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-import matplotlib.pyplot as plt
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 import time
 
 if TYPE_CHECKING:

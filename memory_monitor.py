@@ -3,7 +3,7 @@
 """
 import platform
 import psutil
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 IS_LINUX = platform.system() == 'Linux'
 IS_WINDOWS = platform.system() == 'Windows'
