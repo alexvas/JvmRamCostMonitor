@@ -25,26 +25,27 @@ class MemoryMonitor:
         if not IS_LINUX:
             return {}
         
-        result = {'rss': 0.0, 'pss': 0.0, 'uss': 0.0}
+        result: Dict[str, float] = {'rss': 0.0, 'pss': 0.0, 'uss': 0.0}
         
         try:
-            pids = [pid]
+            pids: List[int] = [pid]
             if include_children:
                 pids.extend(self._get_child_pids(pid))
             
             for proc_pid in pids:
                 try:
-                    proc = psutil.Process(proc_pid)
+                    proc: psutil.Process = psutil.Process(proc_pid)
                     # RSS через psutil
                     mem_info = proc.memory_info()
                     result['rss'] += mem_info.rss
                     
-                    # PSS и USS через /proc/[pid]/smaps
-                    pss, uss = self._read_smaps(proc_pid)
-                    result['pss'] += pss
-                    result['uss'] += uss
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
+
+                # PSS и USS через /proc/[pid]/smaps
+                pss, uss = self._read_smaps(proc_pid)
+                result['pss'] += pss
+                result['uss'] += uss
         except Exception:
             pass
         
