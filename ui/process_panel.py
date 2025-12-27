@@ -4,7 +4,7 @@
 import ROOT
 from ROOT import TGVerticalFrame, TGGroupFrame, TGListBox, TGTextButton
 from ROOT import TGLayoutHints, kLHintsExpandX, kLHintsExpandY, kLHintsLeft
-from ROOT import gClient, TPyDispatcher
+from ROOT import TPyDispatcher, TGCheckButton, TGRadioButton, TGButtonGroup
 import threading
 import time
 from typing import TYPE_CHECKING
@@ -49,7 +49,6 @@ class ProcessPanel:
         self.settings_group = TGGroupFrame(self.frame, "Настройки")
         
         # Чекбокс для включения потомков
-        from ROOT import TGCheckButton
         self.children_check = TGCheckButton(self.settings_group, "Включать потомки")
         self.children_check.SetState(ROOT.kButtonUp)
         self.last_children_state = False
@@ -57,7 +56,6 @@ class ProcessPanel:
                                      TGLayoutHints(kLHintsLeft, 2, 2, 2, 2))
         
         # Режим отображения группы процессов
-        from ROOT import TGRadioButton, TGButtonGroup
         self.mode_group = TGButtonGroup(self.settings_group, "Режим группы")
         self.cumulative_radio = TGRadioButton(self.mode_group, "Кумулятивный")
         self.separate_radio = TGRadioButton(self.mode_group, "Раздельный")
@@ -138,10 +136,11 @@ class ProcessPanel:
         self.visible = not self.visible
         if self.visible:
             self.frame.MapWindow()
-            self.toggle_button.SetText("Скрыть панель")
+            button_text = "Скрыть панель"
         else:
             self.frame.UnmapWindow()
-            self.toggle_button.SetText("Показать панель")
+            button_text = "Показать панель"
+        self.toggle_button.SetText(button_text)
     
     def refresh_processes(self) -> None:
         """Обновить список процессов"""
@@ -152,7 +151,7 @@ class ProcessPanel:
         
         # Заполнение списка
         for i, proc in enumerate(self.processes):
-            display_text = f"{proc['name']} (PID: {proc['pid']})"
+            display_text = f"{proc.name} (PID: {proc.pid})"
             self.process_list.AddEntry(display_text, i)
         
         self.process_list.Layout()
@@ -162,7 +161,7 @@ class ProcessPanel:
         """Обработчик выбора процесса"""
         if 0 <= entry_id < len(self.processes):
             proc = self.processes[entry_id]
-            pid = proc['pid']
+            pid = proc.pid
             
             # Остановка предыдущего мониторинга
             self.main_window.stop_monitoring()

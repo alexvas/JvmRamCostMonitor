@@ -3,8 +3,18 @@
 """
 import subprocess
 import psutil
+from dataclasses import dataclass
 from typing import List, Dict, Optional, Tuple
 import re
+
+
+@dataclass
+class JavaProcessInfo:
+    """Информация о Java процессе"""
+    pid: int
+    name: str
+    main_class: str
+    full_name: str
 
 
 class ProcessManager:
@@ -24,12 +34,12 @@ class ProcessManager:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
     
-    def get_java_processes(self) -> List[Dict[str, object]]:
+    def get_java_processes(self) -> List[JavaProcessInfo]:
         """
         Получить список Java процессов через jps
         
         Returns:
-            Список словарей с ключами: pid, name, main_class, full_name
+            Список JavaProcessInfo с полями: pid, name, main_class, full_name
         """
         if not self._jps_available:
             return []
@@ -61,12 +71,12 @@ class ProcessManager:
                     # Получить читаемое имя процесса
                     readable_name = self._get_readable_name(pid, main_class)
                     
-                    processes.append({
-                        'pid': pid,
-                        'name': readable_name,
-                        'main_class': main_class,
-                        'full_name': main_class
-                    })
+                    processes.append(JavaProcessInfo(
+                        pid=pid,
+                        name=readable_name,
+                        main_class=main_class,
+                        full_name=main_class
+                    ))
                 except ValueError:
                     continue
         except Exception:
