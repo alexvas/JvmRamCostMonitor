@@ -2,6 +2,7 @@
 Конфигурация интервалов опроса и настроек отображения метрик
 """
 import platform
+from typing import Dict
 
 # Интервалы опроса (в секундах)
 POLL_INTERVALS = {
@@ -15,7 +16,7 @@ POLL_INTERVALS = {
 }
 
 # Настройки отображения метрик по умолчанию
-DEFAULT_METRIC_VISIBILITY = {
+DEFAULT_METRIC_VISIBILITY: Dict[str, bool] = {
     'rss': True,
     'pss': True,
     'uss': False,

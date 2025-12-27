@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QGroupBox,
                              QPushButton, QCheckBox, QFileDialog)
-from PyQt5.QtCore import Qt
 from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
@@ -46,33 +45,34 @@ class ControlsPanel(QWidget):
         
         # Группа настроек метрик
         metrics_group = QGroupBox("Отображаемые метрики")
-        metrics_layout = QVBoxLayout()
+
+        self.metrics_layout = QVBoxLayout()
         
-        self.metric_checks = {}
+        self.metric_checks: Dict[str, QCheckBox] = {}
         
-        from config import DEFAULT_METRIC_VISIBILITY, IS_LINUX, IS_WINDOWS
+        from config import IS_LINUX, IS_WINDOWS
         
         # Linux метрики
         if IS_LINUX:
-            self._add_metric_check(metrics_layout, 'rss', 'RSS')
-            self._add_metric_check(metrics_layout, 'pss', 'PSS')
-            self._add_metric_check(metrics_layout, 'uss', 'USS')
+            self._add_metric_check('rss', 'RSS')
+            self._add_metric_check('pss', 'PSS')
+            self._add_metric_check('uss', 'USS')
         
         # Windows метрики
         if IS_WINDOWS:
-            self._add_metric_check(metrics_layout, 'ws', 'Working Set')
-            self._add_metric_check(metrics_layout, 'pws', 'Private Working Set')
-            self._add_metric_check(metrics_layout, 'pb', 'Private Bytes')
+            self._add_metric_check('ws', 'Working Set')
+            self._add_metric_check('pws', 'Private Working Set')
+            self._add_metric_check('pb', 'Private Bytes')
         
         # JMX метрики (для всех платформ)
-        self._add_metric_check(metrics_layout, 'heap_used', 'Heap Used')
-        self._add_metric_check(metrics_layout, 'heap_committed', 'Heap Committed')
-        self._add_metric_check(metrics_layout, 'nmt', 'NMT')
+        self._add_metric_check('heap_used', 'Heap Used')
+        self._add_metric_check('heap_committed', 'Heap Committed')
+        self._add_metric_check('nmt', 'NMT')
         
-        metrics_group.setLayout(metrics_layout)
+        metrics_group.setLayout(self.metrics_layout)
         layout.addWidget(metrics_group)
     
-    def _add_metric_check(self, layout, metric: str, label: str) -> None:
+    def _add_metric_check(self, metric: str, label: str) -> None:
         """Добавить чекбокс для метрики"""
         from config import DEFAULT_METRIC_VISIBILITY
         
@@ -80,7 +80,7 @@ class ControlsPanel(QWidget):
         default_visible = DEFAULT_METRIC_VISIBILITY.get(metric, True)
         check.setChecked(default_visible)
         
-        layout.addWidget(check)
+        self.metrics_layout.addWidget(check)
         self.metric_checks[metric] = check
     
     def get_metric_visibility(self) -> Dict[str, bool]:
