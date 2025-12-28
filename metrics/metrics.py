@@ -1,7 +1,7 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 import sys
 from datetime import datetime
-from typing import Any, Dict, Literal, Type, cast
+from typing import Any, Dict, Literal, Type, cast, List
 from suppliers import (
     AbstractDataSupplier,
     SuppliersFactory,
@@ -20,7 +20,7 @@ from suppliers import (
 )
 
 
-class AbstractMetric:
+class AbstractMetric(ABC):
     """Абстрактный класс для метрик"""
 
     def __init__(
@@ -57,9 +57,9 @@ class AbstractMetric:
         """Получить цвет метрики"""
         return self.__color
 
-    @abstractmethod
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    @abstractmethod
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         """Получить тип метрики"""
         raise NotImplementedError("Метод kind должен быть реализован в подклассе")
 
@@ -78,13 +78,15 @@ class RssMetric(AbstractMetric):
     def get_value(self) -> int:
         """Получить значение метрики"""
 
-        data: MemInfoData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
-        return int(data.rss)
+        data: MemInfoData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
+        return data.rss
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["linux"]
 
 
@@ -97,13 +99,15 @@ class PssMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: SmapsData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: SmapsData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.pss
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["linux"]
 
 
@@ -116,13 +120,15 @@ class UssMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: SmapsData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: SmapsData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.uss
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["linux"]
 
 
@@ -135,13 +141,15 @@ class WsMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: WsData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: WsData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.ws
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["windows"]
 
 
@@ -154,13 +162,15 @@ class PwsMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: PwsData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: PwsData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.pws
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["windows"]
 
 
@@ -173,13 +183,15 @@ class PbMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: PbData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: PbData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.pb
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["windows"]
 
 
@@ -192,13 +204,15 @@ class HeapUsedMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: JmxData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: JmxData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.heap_used
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["windows", "linux"]
 
 
@@ -210,14 +224,16 @@ class HeapCommittedMetric(AbstractMetric):
         self.__supplier = supplier
 
     def get_value(self) -> int:
-        """Получить значение метрики"""
-        data: JmxData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        """Получить значение метрики Heap Committed"""
+        data: JmxData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.heap_committed
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["windows", "linux"]
 
 
@@ -230,13 +246,15 @@ class NmtMetric(AbstractMetric):
 
     def get_value(self) -> int:
         """Получить значение метрики"""
-        data: JmxData | None = self.__supplier.get_data()
-        if data is None:
-            return 0
+        data: JmxData = self.__supplier.get_data()
+        if data.kind == "none":
+            return -1
+        if data.kind == "same":
+            return -2
         return data.nmt
 
     @classmethod
-    def get_kind(cls) -> list[Literal["windows", "linux"]]:
+    def get_kind(cls) -> List[Literal["windows", "linux"]]:
         return ["windows", "linux"]
 
 
@@ -245,7 +263,7 @@ class MetricsFactory:
 
     @classmethod
     def __init__(cls) -> None:
-        cls.__metric_classes: list[Type[AbstractMetric]] = [
+        cls.__metric_classes: List[Type[AbstractMetric]] = [
             RssMetric,
             PssMetric,
             UssMetric,
@@ -276,16 +294,16 @@ class MetricsFactory:
             HeapCommittedMetric: "cyan",
             NmtMetric: "gray",
         }
-        cls.__metrics: Dict[int, list[AbstractMetric]] = {}
+        cls.__metrics: Dict[int, List[AbstractMetric]] = {}
 
     @classmethod
     def create_metrics(
         cls, pid: int, os: Literal["windows", "linux"]
-    ) -> list[AbstractMetric]:
+    ) -> List[AbstractMetric]:
         if pid in cls.__metrics:
             return cls.__metrics[pid]
 
-        metrics: list[AbstractMetric] = []
+        metrics: List[AbstractMetric] = []
 
         for metric_class in cls.__metric_classes:
             if os not in metric_class.get_kind():
