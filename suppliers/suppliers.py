@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Type, TypeVar, cast, Literal, Generic, Optional
 from dataclasses import dataclass
+import functools
 import psutil
 from datetime import datetime, timedelta
 from .jmx import JmxBeanFactory
@@ -345,6 +346,21 @@ class JmxSupplier(AbstractDataSupplier[JmxData]):
         return same_jmx_data
 
 
+def ensure_initialized(func):
+    """Декоратор для автоматической инициализации класса перед вызовом метода"""
+
+    @functools.wraps(func)
+    def wrapper(cls_or_self, *args, **kwargs):
+        cls = cls_or_self if isinstance(cls_or_self, type) else type(cls_or_self)
+        if not hasattr(cls, "_SuppliersFactory__cached_suppliers"):
+            init_method = getattr(cls, "__init__", None)
+            if init_method:
+                init_method()
+        return func(cls_or_self, *args, **kwargs)
+
+    return wrapper
+
+
 class SuppliersFactory:
     """Фабрика поставщиков данных"""
 
@@ -363,6 +379,7 @@ class SuppliersFactory:
         ] = {}
 
     @classmethod
+    @ensure_initialized
     def create_supplier(
         cls, pid: int, supplier_class: Type[AbstractDataSupplier[T]]
     ) -> AbstractDataSupplier[T]:

@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+import functools
 import sys
 from datetime import datetime
 from typing import Any, Dict, Literal, Type, cast, List
@@ -258,6 +259,21 @@ class NmtMetric(AbstractMetric):
         return ["windows", "linux"]
 
 
+def ensure_initialized(func):
+    """Декоратор для автоматической инициализации класса перед вызовом метода"""
+
+    @functools.wraps(func)
+    def wrapper(cls_or_self, *args, **kwargs):
+        cls = cls_or_self if isinstance(cls_or_self, type) else type(cls_or_self)
+        if not hasattr(cls, "_MetricsFactory__metrics"):
+            init_method = getattr(cls, "__init__", None)
+            if init_method:
+                init_method()
+        return func(cls_or_self, *args, **kwargs)
+
+    return wrapper
+
+
 class MetricsFactory:
     """Фабрика метрик"""
 
@@ -297,6 +313,7 @@ class MetricsFactory:
         cls.__metrics: Dict[int, List[AbstractMetric]] = {}
 
     @classmethod
+    @ensure_initialized
     def create_metrics(
         cls, pid: int, os: Literal["windows", "linux"]
     ) -> List[AbstractMetric]:
