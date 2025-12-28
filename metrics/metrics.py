@@ -290,7 +290,9 @@ class MetricsFactory:
             HeapCommittedMetric,
             NmtMetric,
         ]
-        cls.metric_mapping = {
+        cls.metric_mapping: Dict[
+            Type[AbstractMetric], Type[AbstractDataSupplier[Any]]
+        ] = {
             RssMetric: MemInfoSupplier,
             PssMetric: SmapsSupplier,
             UssMetric: SmapsSupplier,
@@ -298,8 +300,10 @@ class MetricsFactory:
             PwsMetric: PwsSupplier,
             PbMetric: PbSupplier,
             HeapUsedMetric: JmxSupplier,
+            HeapCommittedMetric: JmxSupplier,
+            NmtMetric: JmxSupplier,
         }
-        cls.metric_color_mapping = {
+        cls.metric_color_mapping: Dict[Type[AbstractMetric], str] = {
             RssMetric: "red",
             PssMetric: "green",
             UssMetric: "blue",
@@ -327,7 +331,11 @@ class MetricsFactory:
                 continue
 
             supplier_class = cls.metric_mapping[metric_class]
-            supplier = SuppliersFactory.create_supplier(pid, supplier_class)
+            try:
+                supplier = SuppliersFactory.create_supplier(pid, supplier_class)
+            except Exception as e:
+                print(f"Error creating supplier for {metric_class}: {e}")
+                continue
             color = cls.metric_color_mapping[metric_class]
 
             m = cast(Any, metric_class)(pid, color, supplier)
