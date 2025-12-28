@@ -34,7 +34,7 @@ class MemoryMonitor:
             
             for proc_pid in pids:
                 try:
-                    proc: psutil.Process = psutil.Process(proc_pid)
+                    proc = psutil.Process(proc_pid)
                     # RSS через psutil
                     mem_info = proc.memory_info()
                     result['rss'] += mem_info.rss
