@@ -21,7 +21,6 @@ from .process_panel import ProcessPanel
 from .graph_panel import GraphPanel
 from .controls_panel import ControlsPanel
 from process_manager import ProcessManager
-from config import POLL_INTERVALS, IS_LINUX, IS_WINDOWS
 from metrics.metrics import MetricsFactory, AbstractMetric
 
 

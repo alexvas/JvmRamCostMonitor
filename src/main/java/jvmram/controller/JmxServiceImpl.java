@@ -1,0 +1,37 @@
+package jvmram.controller;
+
+import jvmram.jmx.JmxBeanFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+
+class JmxServiceImpl implements JmxService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private JmxServiceImpl() {
+    }
+
+    @Override
+    public void gc(long pid) {
+        var bean = JmxBeanFactory.getInstance().getMemoryMxBean(pid);
+
+        if (bean == null) {
+            LOG.info("No JMX bean for process {}, the one might be already closed", pid);
+            return;
+        }
+        try {
+            bean.gc();
+        } catch (Exception e) {
+            LOG.info("Failed to gc pid {}: {}", pid, e.getMessage());
+        }
+    }
+
+    @Override
+    public void createHeapDump(String filepath) {
+        // todo: implement
+    }
+
+    static JmxServiceImpl INSTANCE = new JmxServiceImpl();
+}
