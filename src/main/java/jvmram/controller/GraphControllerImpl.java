@@ -33,7 +33,7 @@ class GraphControllerImpl implements GraphController {
         var exceeds = new ArrayList<UpdateResult.Exceed>();
         boolean relevantUpdate = false;
         for (MetricType mt : MetricType.values()) {
-            if (!metricVisibility.isVisible(mt)) {
+            if (!mt.isApplicable(Config.os) || !metricVisibility.isVisible(mt)) {
                 continue;
             }
             var ramMetric = metrics.get(mt);
