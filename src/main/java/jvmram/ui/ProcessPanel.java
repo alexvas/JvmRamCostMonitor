@@ -116,17 +116,32 @@ public class ProcessPanel extends JPanel {
         // Очистка списка
         listModel.clear();
 
+        if (jvmProcessInfos.isEmpty()) {
+            return;
+        }
+
         // Заполнение списка
         int i = 0;
+        int maxPidDigitCount = jvmProcessInfos.stream()
+                .map(ProcessPanel::pidDigitCount)
+                .max(Integer::compare)
+                .orElseThrow();
         List<Integer> selectedIndices = new ArrayList<>();
-        for (var procInfo : jvmProcessInfos) {
-            listModel.addElement(procInfo.displayName());
+        for (var procInfo : jvmProcessInfos.stream().sorted().toList()) {
+            var formattedPid = ("%" + maxPidDigitCount + "d").formatted(procInfo.pid());
+            var p = formattedPid.replace(" ", " ");
+            var entry = "%s %s".formatted(p, procInfo.displayName());
+            listModel.addElement(entry);
             if (toBeSelected.contains(procInfo.pid())) {
                 selectedIndices.add(i);
             }
             ++i;
         }
         processList.setSelectedIndices(toArray(selectedIndices));
+    }
+
+    private static int pidDigitCount(JvmProcessInfo procInfo) {
+        return Long.valueOf(procInfo.pid()).toString().length();
     }
 
     private void onProcessSelected() {

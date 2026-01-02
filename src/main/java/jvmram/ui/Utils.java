@@ -17,7 +17,7 @@ public class Utils {
 
     public static long parsePidFromProcessDisplayName(String selectedItem) {
         var matcher = PID_NUMBER_REGEX.matcher(selectedItem);
-        if (!matcher.matches()) {
+        if (!matcher.find()) {
             throw new IllegalStateException("Unexpected selected item: %s".formatted(selectedItem));
         }
         var matchedGroup = matcher.group();
