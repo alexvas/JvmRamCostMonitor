@@ -7,13 +7,19 @@ import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.MetricVisibility;
 import jvmram.model.graph.UpdateResult;
 import jvmram.model.metrics.MetricType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.synchronizedList;
 
 class GraphControllerImpl implements GraphController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
     private final MetricsFactory metricsFactory = MetricsFactory.getInstance();
     private final ProcessController processController = ProcessController.getInstance();
@@ -23,11 +29,13 @@ class GraphControllerImpl implements GraphController {
 
     @Override
     public void update() {
+        LOG.trace("general update");
         var followingPids = processController.getPidsWithDescendants();
         followingPids.forEach(this::update);
     }
 
     private void update(long pid) {
+        LOG.trace("updating pid {}", pid);
         var metrics = metricsFactory.getOrCreateMetrics(pid, Config.os);
 
         var exceeds = new ArrayList<UpdateResult.Exceed>();
@@ -61,8 +69,14 @@ class GraphControllerImpl implements GraphController {
         }
 
         if (relevantUpdate) {
-            renderers.forEach(GraphRenderer::repaint);
+            LOG.debug("Repainting after the relevant update of pid {}", pid);
+            renderers.forEach(GraphRenderer::repaintAsync);
         }
+    }
+
+    @Override
+    public void addRenderer(GraphRenderer renderer) {
+        this.renderers.add(renderer);
     }
 
     private GraphControllerImpl() {

@@ -20,6 +20,14 @@ public class ProcessPanel extends JPanel {
     private final JButton showButton;
     private final DefaultListModel<String> listModel = new DefaultListModel<>();
 
+    /**
+     * Это костыль, сынок.
+     * Забудь о реактивности, ибо это Свинг.
+     * Свинг релизнули, когда творцов реактивного UI ещё не было даже в планах.
+     * Отсюда костыли.
+     */
+    private volatile boolean preventSelectionEventPropagation = false;
+
     private final JList<String> processList;
     private final JCheckBox childrenCheck;
 
@@ -114,7 +122,9 @@ public class ProcessPanel extends JPanel {
         var toBeSelected = processController.getExplicitlyFollowingPids();
 
         // Очистка списка
+        preventSelectionEventPropagation = true;
         listModel.clear();
+        preventSelectionEventPropagation = false;
 
         if (jvmProcessInfos.isEmpty()) {
             return;
@@ -145,6 +155,10 @@ public class ProcessPanel extends JPanel {
     }
 
     private void onProcessSelected() {
+        if (preventSelectionEventPropagation) {
+            return;
+        }
+
         var pids = new ArrayList<Long>();
 
         for (int i = 0; i < listModel.size(); ++i) {

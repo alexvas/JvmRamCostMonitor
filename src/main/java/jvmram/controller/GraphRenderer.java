@@ -1,5 +1,5 @@
 package jvmram.controller;
 
 public interface GraphRenderer {
-    void repaint();
+    void repaintAsync();
 }

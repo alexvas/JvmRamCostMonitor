@@ -1,7 +1,5 @@
 package jvmram.controller;
 
-import jvmram.model.graph.GraphPointQueues;
-import jvmram.model.graph.MetricVisibility;
 import jvmram.process.JvmProcessInfo;
 import jvmram.process.ProcessManager;
 import jvmram.util.RwGuarded;
@@ -21,8 +19,6 @@ class ProcessControllerImpl implements ProcessController {
     private final Map<Long, Collection<Long>> descendantPids = new HashMap<>();
 
     private final ProcessManager processManager = ProcessManager.getInstance();
-    private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
-    private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
 
     private final List<Consumer<Collection<JvmProcessInfo>>> onProcessInfoChangedListeners = new ArrayList<>();
 
@@ -51,7 +47,7 @@ class ProcessControllerImpl implements ProcessController {
                     List<Long> output = new ArrayList<>();
                     for (long pid : explicitlyFollowingPids) {
                         output.add(pid);
-                        output.addAll(descendantPids.get(pid));
+                        output.addAll(descendantPids.getOrDefault(pid, List.of()));
                     }
                     return output;
                 }

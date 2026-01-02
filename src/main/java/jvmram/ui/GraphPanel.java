@@ -1,13 +1,14 @@
 package jvmram.ui;
 
 import jvmram.Config;
+import jvmram.controller.GraphController;
 import jvmram.controller.GraphRenderer;
 import jvmram.metrics.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.MetricVisibility;
 import jvmram.model.metrics.MetricType;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -19,7 +20,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 public class GraphPanel extends JPanel implements GraphRenderer {
 
@@ -29,6 +29,7 @@ public class GraphPanel extends JPanel implements GraphRenderer {
 
     private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
     private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
+    private final GraphController graphController = GraphController.getInstance();
 
     private static final Map<MetricType, Color> COLORS = new EnumMap<>(MetricType.class);
 
@@ -51,6 +52,7 @@ public class GraphPanel extends JPanel implements GraphRenderer {
     }
 
     public GraphPanel() {
+        graphController.addRenderer(this);
     }
 
     @Override
@@ -235,8 +237,7 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         double yDelta = yRelative * graphHeight;
         int xAbsolute = xAxisStart + (int) Math.round(xDelta);
         int yAbsolute = yAxisStart - (int) Math.round(yDelta);
-        var cp = new CanvasPoint(xAbsolute, yAbsolute);
-        return cp;
+        return new CanvasPoint(xAbsolute, yAbsolute);
     }
 
     private void drawLegend(Graphics2D g2, int width) {
@@ -245,29 +246,22 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         int lineHeight = 20;
 
         g2.setFont(new Font("Arial", Font.PLAIN, 12));
-        withinIndexedMetric((index, mt) -> {
-                    var legendMetricsColor = COLORS.get(mt);
-                    var metricsName = mt.getDisplayName();
-
-                    int itemTop = legendY + index * lineHeight;
-
-                    g2.setColor(legendMetricsColor);
-                    g2.fillRect(legendX, itemTop - 8, 15, 2);
-                    g2.setColor(Color.BLACK);
-                    g2.drawString(metricsName, legendX + 20, itemTop);
-                }
-        );
-    }
-
-    private void withinIndexedMetric(BiConsumer<Integer, MetricType> consumer) {
         int index = 0;
 
-        for (var mt : MetricType.values()) {
-            if (!mt.isApplicable(Config.os) || !metricVisibility.isVisible(mt)) {
+        for (var mt1 : MetricType.values()) {
+            if (!mt1.isApplicable(Config.os) || !metricVisibility.isVisible(mt1)) {
                 continue;
             }
-            consumer.accept(index, mt);
-            index++;
+            var legendMetricsColor = COLORS.get(mt1);
+            var metricsName = mt1.getDisplayName();
+
+            int itemTop = legendY + index * lineHeight;
+
+            g2.setColor(legendMetricsColor);
+            g2.fillRect(legendX, itemTop - 8, 15, 2);
+            g2.setColor(Color.BLACK);
+            g2.drawString(metricsName, legendX + 20, itemTop);
+            ++index;
         }
     }
 
@@ -281,5 +275,10 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         } else {
             return String.format("%.0f", value);
         }
+    }
+
+    @Override
+    public void repaintAsync() {
+        SwingUtilities.invokeLater(this::repaint);
     }
 }
