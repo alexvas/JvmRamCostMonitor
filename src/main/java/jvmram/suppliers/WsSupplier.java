@@ -1,5 +1,11 @@
 package jvmram.suppliers;
 
+import com.sun.jna.Native;
+import com.sun.jna.Structure;
+import com.sun.jna.platform.win32.BaseTSD;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinDef;
+import com.sun.jna.platform.win32.WinNT;
 import jvmram.Config;
 import jvmram.suppliers.data.WsData;
 import org.slf4j.Logger;
@@ -12,6 +18,37 @@ import static jvmram.metrics.RamMetric.Os.WINDOWS;
 class WsSupplier extends AbstractDataSupplier<WsData> {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+    private interface Psapi extends com.sun.jna.Library {
+        Psapi INSTANCE = Native.load("psapi", Psapi.class);
+
+        boolean GetProcessMemoryInfo(WinNT.HANDLE hProcess, PROCESS_MEMORY_COUNTERS ppsmemCounters, int cb);
+    }
+
+    @Structure.FieldOrder({
+            "cb",
+            "PageFaultCount",
+            "PeakWorkingSetSize",
+            "WorkingSetSize",
+            "QuotaPeakPagedPoolUsage",
+            "QuotaPagedPoolUsage",
+            "QuotaPeakNonPagedPoolUsage",
+            "QuotaNonPagedPoolUsage",
+            "PagefileUsage",
+            "PeakPagefileUsage"
+    })
+    private static class PROCESS_MEMORY_COUNTERS extends Structure {
+        public WinDef.DWORD cb;
+        public WinDef.DWORD PageFaultCount;
+        public BaseTSD.SIZE_T PeakWorkingSetSize;
+        public BaseTSD.SIZE_T WorkingSetSize;
+        public BaseTSD.SIZE_T QuotaPeakPagedPoolUsage;
+        public BaseTSD.SIZE_T QuotaPagedPoolUsage;
+        public BaseTSD.SIZE_T QuotaPeakNonPagedPoolUsage;
+        public BaseTSD.SIZE_T QuotaNonPagedPoolUsage;
+        public BaseTSD.SIZE_T PagefileUsage;
+        public BaseTSD.SIZE_T PeakPagefileUsage;
+    }
+
     WsSupplier(long pid) {
         super(pid);
         if (Config.os != WINDOWS) {
@@ -23,6 +60,28 @@ class WsSupplier extends AbstractDataSupplier<WsData> {
     
     @Override
     WsData doGetData() {
-        return null;
+        var hProcess = Kernel32.INSTANCE.OpenProcess(
+                WinNT.PROCESS_QUERY_INFORMATION | WinNT.PROCESS_VM_READ,
+                false,
+                (int) pid
+        );
+        if (hProcess == null) {
+            LOG.warn("Failed to open process handle for pid {}", pid);
+            return null;
+        }
+        try {
+            var pmc = new PROCESS_MEMORY_COUNTERS();
+            int size = pmc.size();
+            pmc.cb = new WinDef.DWORD(size);
+            boolean success = Psapi.INSTANCE.GetProcessMemoryInfo(hProcess, pmc, size);
+            if (success) {
+                return new WsData(pmc.WorkingSetSize.longValue());
+            } else {
+                LOG.warn("Failed to get process memory info for pid {}", pid);
+                return null;
+            }
+        } finally {
+            Kernel32.INSTANCE.CloseHandle(hProcess);
+        }
     }
 }
