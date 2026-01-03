@@ -35,9 +35,8 @@ class MetricsFactoryImpl implements MetricsFactory {
                     USS, createMetrics(pid, USS, SmapsData::uss)
             );
             case WINDOWS -> Map.of(
-                    PB, createMetrics(pid, PB, PbData::pb),
-                    PWS, createMetrics(pid, PWS, PwsData::pws),
-                    WS, createMetrics(pid, WS, WsData::ws)
+                    PB, createMetrics(pid, PB, WinData::pb),
+                    WS, createMetrics(pid, WS, WinData::ws)
             );
         };
         var common = Map.of(

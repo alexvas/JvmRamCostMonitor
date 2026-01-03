@@ -30,9 +30,7 @@ class HardwareDataSuppliersFactoryImpl implements HardwareDataSuppliersFactory {
         return switch (type) {
             case RSS -> MemInfoSupplier.class;
             case PSS, USS -> SmapsSupplier.class;
-            case PB -> PbSupplier.class;
-            case WS -> WsSupplier.class;
-            case PWS -> PwsSupplier.class;
+            case WS, PB -> WinSupplier.class;
             case HEAP_COMMITTED, HEAP_USED, NMT_USED, NMT_COMMITTED -> JmxSupplier.class;
         };
     }
@@ -41,9 +39,7 @@ class HardwareDataSuppliersFactoryImpl implements HardwareDataSuppliersFactory {
         return switch (type) {
             case RSS -> new MemInfoSupplier(pid);
             case PSS, USS -> new SmapsSupplier(pid);
-            case PB -> new PbSupplier(pid);
-            case WS -> new WsSupplier(pid);
-            case PWS -> new PwsSupplier(pid);
+            case WS, PB -> new WinSupplier(pid);
             case HEAP_COMMITTED, HEAP_USED, NMT_USED, NMT_COMMITTED -> new JmxSupplier(pid);
         };
     }

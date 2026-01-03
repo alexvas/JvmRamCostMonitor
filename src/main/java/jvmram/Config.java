@@ -32,7 +32,6 @@ public final class Config {
 
             int devDurationInSeconds = switch (type) {
                 case RSS, WS, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 1;
-                case PWS -> 3;
                 case PSS, USS, PB -> 10;
             };
             var devDuration = Duration.ofSeconds(devDurationInSeconds);
@@ -40,7 +39,6 @@ public final class Config {
 
             int productionDurationInSeconds = switch (type) {
                 case RSS, WS, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 2;
-                case PWS -> 5;
                 case PB -> 15;
                 case PSS, USS -> 30;
             };
@@ -48,7 +46,7 @@ public final class Config {
             PRODUCTION_POLL_INTERVALS.put(type, productionDuration);
 
             int leakHuntDurationInSeconds = switch (type) {
-                case RSS, WS, PWS -> 2;
+                case RSS, WS -> 2;
                 case PSS, USS, PB, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 5;
             };
             var leakHuntDuration = Duration.ofSeconds(leakHuntDurationInSeconds);
@@ -61,7 +59,6 @@ public final class Config {
         DEFAULT_METRIC_VISIBILITY.put(MetricType.PSS, true);
         DEFAULT_METRIC_VISIBILITY.put(MetricType.USS, false);
         DEFAULT_METRIC_VISIBILITY.put(MetricType.WS, true);
-        DEFAULT_METRIC_VISIBILITY.put(MetricType.PWS, true);
         DEFAULT_METRIC_VISIBILITY.put(MetricType.PB, false);
         DEFAULT_METRIC_VISIBILITY.put(MetricType.HEAP_USED, true);
         DEFAULT_METRIC_VISIBILITY.put(MetricType.HEAP_COMMITTED, true);

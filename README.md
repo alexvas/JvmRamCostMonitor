@@ -177,9 +177,7 @@ Working Set — это объём физической памяти, котор�
 
 - Task Manager → Memory
 - Performance Counter: `Process(*)\Working Set`
-- API:
-    - `GetProcessMemoryInfo`
-    - поле `WorkingSetSize`
+- API: `GetProcessMemoryInfo → .WorkingSetSize`
 
 Вывод
 
@@ -187,25 +185,6 @@ Working Set — _оперативный аналог RSS_, с теми же ис
 
 - shared pages считаются целиком;
 - сумма WS по системе может превышать RAM.
-
-### Private Working Set (PWS)
-
-Private Working Set в Windows ≈ USS в Linux (но только resident часть)
-
-Private Working Set — часть Working Set, которая:
-
-- не разделяется с другими процессами;
-- выгружается из RAM при завершении процесса.
-
-Где смотреть:
-
-- Performance Counter: `Process(*)\Working Set - Private`
-- Process Explorer (Sysinternals)
-
-Ограничение:
-
-- считает только резидентные private pages;
-- не учитывает private pages в pagefile.
 
 ### Private Bytes (PB)
 
@@ -220,7 +199,7 @@ Private Bytes — объём виртуальной памяти, выделен
 
 - Task Manager → Commit size (старые версии)
 - Performance Counter: `Process(*)\Private Bytes`
-- API: `GetProcessMemoryInfo → PrivateUsage`
+- API: `GetProcessMemoryInfo → .PrivateUsage`
 
 #### Для JVM Private Bytes — это
 

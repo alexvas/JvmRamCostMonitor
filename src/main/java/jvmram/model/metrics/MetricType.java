@@ -12,7 +12,6 @@ public enum MetricType {
     PSS(EnumSet.of(LINUX), "Proportional Set Size"),
     USS(EnumSet.of(LINUX), "Unique Set Size"),
     WS(EnumSet.of(WINDOWS), "Working Set"),
-    PWS(EnumSet.of(WINDOWS), "Private Working Set"),
     PB(EnumSet.of(WINDOWS), "Private Bytes"),
     HEAP_USED(EnumSet.allOf(Os.class), "Heap Used"),
     HEAP_COMMITTED(EnumSet.allOf(Os.class), "Heap Committed"),

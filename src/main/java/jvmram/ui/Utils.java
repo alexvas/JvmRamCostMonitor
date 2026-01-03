@@ -21,7 +21,6 @@ public class Utils {
                 case PSS -> Color.GREEN;
                 case USS -> Color.BLUE;
                 case WS -> new Color(97, 110, 18);
-                case PWS -> new Color(118, 68, 1);
                 case PB -> Color.ORANGE;
                 case HEAP_USED -> Color.MAGENTA;
                 case HEAP_COMMITTED -> Color.CYAN;
