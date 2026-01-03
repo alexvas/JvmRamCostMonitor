@@ -4,10 +4,8 @@ package jvmram.controller;
 import jvmram.Config;
 import jvmram.metrics.GraphPoint;
 import jvmram.metrics.MetricsFactory;
-import jvmram.metrics.RamMetric;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.MetricVisibility;
-import jvmram.model.graph.UpdateResult;
 import jvmram.model.metrics.MetricType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,5 +78,5 @@ class GraphControllerImpl implements GraphController {
     private GraphControllerImpl() {
     }
 
-    static GraphControllerImpl INSTANCE = new GraphControllerImpl();
+    static final GraphControllerImpl INSTANCE = new GraphControllerImpl();
 }

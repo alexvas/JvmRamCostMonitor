@@ -1,8 +1,6 @@
 package jvmram.model.graph;
 
 import jvmram.metrics.GraphPoint;
-import jvmram.metrics.RamMetric;
-import jvmram.model.graph.UpdateResult.Exceed;
 import jvmram.model.metrics.MetricType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,5 +132,5 @@ class GraphPointQueuesImpl implements GraphPointQueues {
         return maxBytes;
     }
 
-    static GraphPointQueuesImpl INSTANCE = new GraphPointQueuesImpl();
+    static final GraphPointQueuesImpl INSTANCE = new GraphPointQueuesImpl();
 }

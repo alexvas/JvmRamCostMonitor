@@ -1,7 +1,6 @@
 package jvmram.suppliers;
 
 import jvmram.Config;
-import jvmram.metrics.RamMetric;
 import jvmram.suppliers.data.PwsData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

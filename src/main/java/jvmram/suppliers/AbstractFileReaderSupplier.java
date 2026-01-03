@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 
 abstract class AbstractFileReaderSupplier<T extends HardwareData> extends AbstractDataSupplier<T> {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

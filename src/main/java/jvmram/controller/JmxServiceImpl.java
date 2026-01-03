@@ -33,5 +33,5 @@ class JmxServiceImpl implements JmxService {
         // todo: implement
     }
 
-    static JmxServiceImpl INSTANCE = new JmxServiceImpl();
+    static final JmxServiceImpl INSTANCE = new JmxServiceImpl();
 }

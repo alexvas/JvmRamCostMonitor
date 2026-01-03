@@ -9,7 +9,6 @@ import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 public final class Config {
@@ -84,7 +83,7 @@ public final class Config {
     }
 
     private Config() {
-        // Утилитный класс, не должен быть инстанциирован
+        // Утилитный класс
     }
 }
 

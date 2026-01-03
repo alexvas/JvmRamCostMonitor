@@ -28,9 +28,9 @@ public class GraphPanel extends JPanel implements GraphRenderer {
     private static final Duration GRAPH_MIN_DURATION = Duration.ofMinutes(2);
 
     private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
-    private final GraphController graphController = GraphController.getInstance();
 
     public GraphPanel() {
+        GraphController graphController = GraphController.getInstance();
         graphController.addRenderer(this);
     }
 

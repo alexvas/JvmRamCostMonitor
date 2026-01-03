@@ -87,9 +87,7 @@ class ProcessControllerImpl implements ProcessController {
                     pidsGone.forEach(this::doUnfollowPid);
                 }
         );
-        guarded.read(() -> {
-            onProcessInfoChangedListeners.forEach(listener -> listener.accept(jvmProcesses));
-        });
+        guarded.read(() -> onProcessInfoChangedListeners.forEach(listener -> listener.accept(jvmProcesses)));
     }
 
     @Override
@@ -100,5 +98,5 @@ class ProcessControllerImpl implements ProcessController {
     private ProcessControllerImpl() {
     }
 
-    static ProcessControllerImpl INSTANCE = new ProcessControllerImpl();
+    static final ProcessControllerImpl INSTANCE = new ProcessControllerImpl();
 }

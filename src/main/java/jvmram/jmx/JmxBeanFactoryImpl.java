@@ -84,13 +84,13 @@ class JmxBeanFactoryImpl implements JmxBeanFactory {
 
     @Override
     public void disconnect(long pid) {
-        if (jmxConnectors.containsKey(pid)) {
+        var jmxConnector = jmxConnectors.remove(pid);
+        if (jmxConnector != null) {
             try {
-                jmxConnectors.get(pid).close();
+                jmxConnector.close();
             } catch (Exception e) {
                 // Игнорируем ошибки закрытия
             }
-            jmxConnectors.remove(pid);
         }
         
         memoryMxBeans.remove(pid);

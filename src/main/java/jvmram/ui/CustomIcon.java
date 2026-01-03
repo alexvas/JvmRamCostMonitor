@@ -13,8 +13,6 @@ public class CustomIcon implements Icon {
     private static final Color DISABLED_COLOR = new Color(50, 50, 50);
 
     private final Color color;
-    private final int width = SIZE;
-    private final int height = SIZE;
 
     CustomIcon(MetricType mt) {
         color = COLORS.get(mt);
@@ -42,11 +40,11 @@ public class CustomIcon implements Icon {
 
     @Override
     public int getIconWidth() {
-        return width;
+        return SIZE;
     }
 
     @Override
     public int getIconHeight() {
-        return height;
+        return SIZE;
     }
 }

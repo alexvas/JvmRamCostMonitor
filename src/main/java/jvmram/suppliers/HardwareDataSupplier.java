@@ -31,11 +31,4 @@ public interface HardwareDataSupplier<T extends HardwareData> {
      * @return момент последнего запроса данных от ОС или null, если такого запроса пока не было.
      */
     @Nullable Instant lastPollInstant();
-
-    /**
-     * Идентификатор процесса, к которому привязан Поставщик.
-     *
-     * @return идентификатор процесса.
-     */
-    long getPid();
 }

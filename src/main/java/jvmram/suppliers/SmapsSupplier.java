@@ -1,7 +1,6 @@
 package jvmram.suppliers;
 
 import jvmram.Config;
-import jvmram.metrics.RamMetric;
 import jvmram.suppliers.data.SmapsData;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -9,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.time.Duration;
 
 import static jvmram.metrics.RamMetric.Os.LINUX;
 

@@ -1,7 +1,6 @@
 package jvmram.model.graph;
 
 import jvmram.metrics.GraphPoint;
-import jvmram.model.graph.UpdateResult.Exceed;
 import jvmram.model.metrics.MetricType;
 
 import java.time.Instant;

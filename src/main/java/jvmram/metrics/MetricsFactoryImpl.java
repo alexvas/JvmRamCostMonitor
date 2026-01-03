@@ -53,8 +53,8 @@ class MetricsFactoryImpl implements MetricsFactory {
 
     private <T extends HardwareData> RamMetric createMetrics(long pid, MetricType type, Function<T, Long> converter) {
         HardwareDataSupplier<T> supplier = suppliersFactory.getOrCreateSupplier(pid, type);
-        return new BaseMetric<>(type, supplier, DEV_POLL_INTERVALS.get(type), converter);
+        return new BaseMetric<>(supplier, DEV_POLL_INTERVALS.get(type), converter);
     }
 
-    static MetricsFactoryImpl INSTANCE = new MetricsFactoryImpl();
+    static final MetricsFactoryImpl INSTANCE = new MetricsFactoryImpl();
 }

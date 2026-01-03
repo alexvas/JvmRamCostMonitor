@@ -37,5 +37,5 @@ class MetricVisibilityImpl implements MetricVisibility {
         LOG.trace("after setting visible: {}", invisibles);
     }
 
-    static MetricVisibilityImpl INSTANCE = new MetricVisibilityImpl();
+    static final MetricVisibilityImpl INSTANCE = new MetricVisibilityImpl();
 }

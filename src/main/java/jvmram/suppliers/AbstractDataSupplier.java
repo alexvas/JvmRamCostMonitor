@@ -58,9 +58,4 @@ abstract class AbstractDataSupplier<T extends HardwareData> implements HardwareD
     }
 
     abstract T doGetData();
-
-    @Override
-    public long getPid() {
-        return pid;
-    }
 }

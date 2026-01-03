@@ -1,7 +1,6 @@
 package jvmram.suppliers;
 
 import jvmram.Config;
-import jvmram.metrics.RamMetric;
 import jvmram.suppliers.data.PbData;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;

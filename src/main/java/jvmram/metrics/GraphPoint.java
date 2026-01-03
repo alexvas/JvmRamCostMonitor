@@ -1,7 +1,6 @@
 package jvmram.metrics;
 
 import java.time.Instant;
-import java.util.Comparator;
 
 public record GraphPoint(Instant moment, long bytes) {
 

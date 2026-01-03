@@ -1,7 +1,5 @@
 package jvmram.metrics;
 
-import jvmram.model.metrics.MetricType;
-
 import java.time.Duration;
 
 public interface RamMetric {
@@ -30,19 +28,6 @@ public interface RamMetric {
      * @param pollInterval - новый таймаут опроса.
      */
     void updatePollInterval(Duration pollInterval);
-
-    /**
-     * Отдаёт тип метрики
-     * @return тип метрики
-     */
-    MetricType getMetricType();
-
-    /**
-     * Отдаёт pid процесса, за которым следит метрика.
-     *
-     * @return pid процесса.
-     */
-    long getPid();
 
     enum Os {
         LINUX,
