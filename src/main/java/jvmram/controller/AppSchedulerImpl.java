@@ -4,21 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 class AppSchedulerImpl implements AppScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final ScheduledExecutorService  guiUpdateExecutor = Executors.newSingleThreadScheduledExecutor(
-            runnable -> new Thread(runnable, "gui update")
-    );
+    private static final Duration UPDATE_UI_DELAY = Duration.ofMillis(100);
 
-    private final ScheduledExecutorService procInfoExecutor = Executors.newSingleThreadScheduledExecutor(
-            runnable -> new Thread(runnable, "proc info update")
+    private static final Duration JVM_PROCESSES_LOOKUP_DELAY = Duration.ofSeconds(1);
+
+    private final ScheduledExecutorService backgroundTasksExecutor = Executors.newSingleThreadScheduledExecutor(
+            runnable -> new Thread(runnable, "app-backend")
     );
 
     private AppSchedulerImpl() {
@@ -26,26 +26,32 @@ class AppSchedulerImpl implements AppScheduler {
 
     @Override
     public void start() {
-        guiUpdateExecutor.scheduleWithFixedDelay(this::update, 0, 100, MILLISECONDS);
-        procInfoExecutor.scheduleWithFixedDelay(this::refresh, 0, 1, SECONDS);
-    }
-
-    private void update() {
         var graphController = GraphController.getInstance();
-        try {
-            graphController.update();
-        } catch (Throwable t) {
-            LOG.error("Failed to update GUI", t);
-        }
+        scheduleAtRate(graphController::update, UPDATE_UI_DELAY);
+
+        var processController = ProcessController.getInstance();
+        scheduleWithDelay(processController::refreshAvailableJvmProcesses, JVM_PROCESSES_LOOKUP_DELAY);
     }
 
-    private void refresh() {
-        var processController = ProcessController.getInstance();
-        try {
-            processController.refreshAvailableJvmProcesses();
-        } catch (Throwable t) {
-            LOG.error("Failed to refresh proc infos", t);
-        }
+    private void scheduleWithDelay(Runnable runnable, @SuppressWarnings("SameParameterValue") Duration delay) {
+        Runnable wrapped = getWrapped(runnable);
+        backgroundTasksExecutor.scheduleWithFixedDelay(wrapped, 0, delay.toMillis(), MILLISECONDS);
+    }
+
+    private void scheduleAtRate(Runnable runnable, @SuppressWarnings("SameParameterValue") Duration delay) {
+        Runnable wrapped = getWrapped(runnable);
+        backgroundTasksExecutor.scheduleAtFixedRate(wrapped, 0, delay.toMillis(), MILLISECONDS);
+    }
+
+    private static Runnable getWrapped(Runnable runnable) {
+        return () -> {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                LOG.error("Failed to execute the task", t);
+                throw t;
+            }
+        };
     }
 
     static final AppSchedulerImpl INSTANCE = new AppSchedulerImpl();
