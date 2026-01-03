@@ -1,9 +1,0 @@
-{
-  "reportMissingImports": "warning",
-  "executionEnvironments": [
-    {
-      "root": "."
-    }
-  ]
-}
-
