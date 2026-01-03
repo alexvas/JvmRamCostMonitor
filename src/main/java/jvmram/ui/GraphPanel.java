@@ -178,7 +178,7 @@ public class GraphPanel extends JPanel implements GraphRenderer {
             double value = minValue + (maxValue - minValue) * (10 - i) / 10.0;
             String label = formatValue(value);
             int labelWidth = g2.getFontMetrics().stringWidth(label);
-            int y = height - PADDING - (i * graphHeight / 10) + 5;
+            int y = PADDING + (i * graphHeight / 10) + 5;
             g2.drawString(label, xAxisStart - labelWidth - 5, y);
         }
 
