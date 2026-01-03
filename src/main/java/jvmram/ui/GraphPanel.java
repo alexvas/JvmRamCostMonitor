@@ -1,22 +1,19 @@
 package jvmram.ui;
 
-import jvmram.Config;
 import jvmram.controller.GraphController;
 import jvmram.controller.GraphRenderer;
 import jvmram.metrics.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
-import jvmram.model.graph.MetricVisibility;
 import jvmram.model.graph.Utils;
-import jvmram.model.metrics.MetricType;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
+
+import static jvmram.ui.Utils.COLORS;
 
 public class GraphPanel extends JPanel implements GraphRenderer {
 
@@ -26,28 +23,7 @@ public class GraphPanel extends JPanel implements GraphRenderer {
     private static final Duration GRAPH_MIN_DURATION = Duration.ofMinutes(2);
 
     private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
-    private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
     private final GraphController graphController = GraphController.getInstance();
-
-    private static final Map<MetricType, Color> COLORS = new EnumMap<>(MetricType.class);
-
-    static {
-        for (MetricType mt : MetricType.values()) {
-            Color color = switch (mt) {
-                case RSS -> Color.RED;
-                case PSS -> Color.GREEN;
-                case USS -> Color.BLUE;
-                case WS -> new Color(97, 110, 18);
-                case PWS -> new Color(118, 68, 1);
-                case PB -> Color.ORANGE;
-                case HEAP_USED -> Color.MAGENTA;
-                case HEAP_COMMITTED -> Color.CYAN;
-                case NMT_USED -> new Color(128, 0, 255);
-                case NMT_COMMITTED -> new Color(32, 42, 69);
-            };
-            COLORS.put(mt, color);
-        }
-    }
 
     public GraphPanel() {
         graphController.addRenderer(this);
@@ -108,9 +84,6 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         }
 
         g2.setStroke(oldStroke);
-
-        // Отрисовка легенды
-        drawLegend(g2, width);
 
         // Заголовок
         g2.setColor(Color.BLACK);
@@ -239,31 +212,6 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         int xAbsolute = xAxisStart + (int) Math.round(xDelta);
         int yAbsolute = yAxisStart - (int) Math.round(yDelta);
         return new CanvasPoint(xAbsolute, yAbsolute);
-    }
-
-    private void drawLegend(Graphics2D g2, int width) {
-        int legendX = width - PADDING - 150;
-        int legendY = PADDING + 20;
-        int lineHeight = 20;
-
-        g2.setFont(new Font("Arial", Font.PLAIN, 12));
-        int index = 0;
-
-        for (var mt1 : MetricType.values()) {
-            if (!mt1.isApplicable(Config.os) || !metricVisibility.isVisible(mt1)) {
-                continue;
-            }
-            var legendMetricsColor = COLORS.get(mt1);
-            var metricsName = mt1.getDisplayName();
-
-            int itemTop = legendY + index * lineHeight;
-
-            g2.setColor(legendMetricsColor);
-            g2.fillRect(legendX, itemTop - 8, 15, 2);
-            g2.setColor(Color.BLACK);
-            g2.drawString(metricsName, legendX + 20, itemTop);
-            ++index;
-        }
     }
 
     private String formatValue(double value) {

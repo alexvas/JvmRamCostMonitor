@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static jvmram.ui.Utils.parsePidFromProcessDisplayName;
-import static jvmram.ui.Utils.toArray;
+import static jvmram.ui.Utils.*;
 
 public class ProcessPanel extends JPanel {
 
@@ -91,13 +90,6 @@ public class ProcessPanel extends JPanel {
         add(showButton, BorderLayout.WEST);
 
         processController.addAvailableJvmProcessesListener(this::handleAvailableJvmProcessesUpdate);
-    }
-
-    private JPanel createGroup(String title) {
-        var group = new JPanel();
-        group.setBorder(BorderFactory.createTitledBorder(title));
-        group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
-        return group;
     }
 
     private void showPanel() {

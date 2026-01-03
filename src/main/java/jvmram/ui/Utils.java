@@ -1,11 +1,36 @@
 package jvmram.ui;
 
+import jvmram.model.metrics.MetricType;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Utils {
     private Utils() {}
 
+    static final Map<MetricType, Color> COLORS = new EnumMap<>(MetricType.class);
+
+    static {
+        for (MetricType mt : MetricType.values()) {
+            Color color = switch (mt) {
+                case RSS -> Color.RED;
+                case PSS -> Color.GREEN;
+                case USS -> Color.BLUE;
+                case WS -> new Color(97, 110, 18);
+                case PWS -> new Color(118, 68, 1);
+                case PB -> Color.ORANGE;
+                case HEAP_USED -> Color.MAGENTA;
+                case HEAP_COMMITTED -> Color.CYAN;
+                case NMT_USED -> new Color(128, 0, 255);
+                case NMT_COMMITTED -> new Color(32, 42, 69);
+            };
+            COLORS.put(mt, color);
+        }
+    }
 
     public static int[] toArray(List<Integer> input) {
         return input.stream()
@@ -22,5 +47,12 @@ public class Utils {
         }
         var matchedGroup = matcher.group();
         return Long.parseLong(matchedGroup);
+    }
+
+    public static JPanel createGroup(String title) {
+        JPanel group = new JPanel();
+        group.setBorder(BorderFactory.createTitledBorder(title));
+        group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
+        return group;
     }
 }
