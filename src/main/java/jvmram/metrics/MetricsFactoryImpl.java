@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static jvmram.Config.PRODUCTION_POLL_INTERVALS;
+import static jvmram.Config.DEV_POLL_INTERVALS;
 import static jvmram.model.metrics.MetricType.*;
 
 class MetricsFactoryImpl implements MetricsFactory {
@@ -53,7 +53,7 @@ class MetricsFactoryImpl implements MetricsFactory {
 
     private <T extends HardwareData> RamMetric createMetrics(long pid, MetricType type, Function<T, Long> converter) {
         HardwareDataSupplier<T> supplier = suppliersFactory.getOrCreateSupplier(pid, type);
-        return new BaseMetric<>(type, supplier, PRODUCTION_POLL_INTERVALS.get(type), converter);
+        return new BaseMetric<>(type, supplier, DEV_POLL_INTERVALS.get(type), converter);
     }
 
     static MetricsFactoryImpl INSTANCE = new MetricsFactoryImpl();

@@ -18,6 +18,8 @@ public final class Config {
 
     // Интервалы опроса (в секундах)
     public static final Map<MetricType, Duration> PRODUCTION_POLL_INTERVALS = new EnumMap<>(MetricType.class);
+    public static final Map<MetricType, Duration> DEV_POLL_INTERVALS = new EnumMap<>(MetricType.class);
+    public static final Map<MetricType, Duration> LEAK_HUNT_POLL_INTERVALS = new EnumMap<>(MetricType.class);
 
     // Настройки отображения метрик по умолчанию
     public static final Map<MetricType, Boolean> DEFAULT_METRIC_VISIBILITY = new EnumMap<>(MetricType.class);
@@ -28,14 +30,30 @@ public final class Config {
     static {
         // Инициализация интервалов опроса
         Arrays.stream(MetricType.values()).forEach(type -> {
+
+            int devDurationInSeconds = switch (type) {
+                case RSS, WS, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 1;
+                case PWS -> 3;
+                case PSS, USS, PB -> 10;
+            };
+            var devDuration = Duration.ofSeconds(devDurationInSeconds);
+            DEV_POLL_INTERVALS.put(type, devDuration);
+
             int productionDurationInSeconds = switch (type) {
-                case RSS, WS, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 5;
+                case RSS, WS, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 2;
+                case PWS -> 5;
+                case PB -> 15;
                 case PSS, USS -> 30;
-                case PWS, PB -> 10;
             };
             var productionDuration = Duration.ofSeconds(productionDurationInSeconds);
-
             PRODUCTION_POLL_INTERVALS.put(type, productionDuration);
+
+            int leakHuntDurationInSeconds = switch (type) {
+                case RSS, WS, PWS -> 2;
+                case PSS, USS, PB, HEAP_USED, HEAP_COMMITTED, NMT_USED, NMT_COMMITTED -> 5;
+            };
+            var leakHuntDuration = Duration.ofSeconds(leakHuntDurationInSeconds);
+            LEAK_HUNT_POLL_INTERVALS.put(type, leakHuntDuration);
         });
 
 
