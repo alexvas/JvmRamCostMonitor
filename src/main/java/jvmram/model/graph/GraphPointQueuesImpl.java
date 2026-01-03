@@ -4,7 +4,10 @@ import jvmram.metrics.GraphPoint;
 import jvmram.metrics.RamMetric;
 import jvmram.model.graph.UpdateResult.Exceed;
 import jvmram.model.metrics.MetricType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +15,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Stream;
 
 class GraphPointQueuesImpl implements GraphPointQueues {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int SIZE_LIMIT = 1_000;
 
@@ -26,11 +31,11 @@ class GraphPointQueuesImpl implements GraphPointQueues {
 
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     @Override
-    public UpdateResult add(long pid, MetricType metricType, GraphPoint graphPoint) {
+    public List<GraphPoint> add(long pid, MetricType metricType, GraphPoint graphPoint) {
 
         var bytes = graphPoint.bytes();
-        if (bytes == RamMetric.NO_DATA || bytes == RamMetric.SAME_DATA) {
-            return UpdateResult.Signal.REDUNDANT_UPDATE;
+        if (bytes < 0) {
+            throw new IllegalArgumentException("Bytes in GraphPoint must be positive: %s".formatted(graphPoint));
         }
 
         minMoment = Utils.min(minMoment, graphPoint.moment());
@@ -38,24 +43,26 @@ class GraphPointQueuesImpl implements GraphPointQueues {
         maxBytes = Math.max(maxBytes, graphPoint.bytes());
 
         var key = new GraphKey(metricType, pid);
-        var deque = data.computeIfAbsent(key, _ -> new LinkedBlockingDeque<>());
+        var deque = data.computeIfAbsent(key, _ -> {
+            LOG.debug("creating entry for a {}", key);
+            return new LinkedBlockingDeque<>();
+        });
         var exceed = new ArrayList<GraphPoint>();
-        while (deque.size() > SIZE_LIMIT) {
+        while (deque.size() >= SIZE_LIMIT) {
             exceed.add(deque.pollFirst());
         }
         deque.offer(graphPoint);
         return exceed.isEmpty()
-                ? UpdateResult.Signal.UPDATE_WITHIN_BONDS
-                : new Exceed(exceed);
+                ? List.of()
+                : exceed;
     }
 
     @Override
-    public void handleExceed(Collection<Exceed> exceeds) {
+    public void handleExceed(Collection<GraphPoint> exceeds) {
         if (exceeds.isEmpty()) {
             return;
         }
         var maxExceedInstant = exceeds.stream()
-                .flatMap(it -> it.points().stream())
                 .map(GraphPoint::moment)
                 .max(Instant::compareTo)
                 .orElse(Instant.MIN);
@@ -63,7 +70,6 @@ class GraphPointQueuesImpl implements GraphPointQueues {
         minMoment = findMinTime();
 
         long maxExceedBytes = exceeds.stream()
-                .flatMap(it -> it.points().stream())
                 .mapToLong(GraphPoint::bytes)
                 .max()
                 .orElse(-1);

@@ -14,28 +14,37 @@ abstract class AbstractDataSupplier<T extends HardwareData> implements HardwareD
 
     private boolean initialized;
     private Instant lastPollInstant;
+    private T stored;
 
     AbstractDataSupplier(long pid) {
         this.pid = pid;
     }
-    
+
     @Override
-    public @Nullable T getData() {
+    public void measureAndStore() {
         if (!initialized) {
-            return null;
+            return;
         }
 
         lastPollInstant = Instant.now();
 
         try {
-            return doGetData();
+            stored = doGetData();
         } catch (Exception e) {
             LOG.error("Error getting data for pid {}", pid);
-            return null;
+            stored = null;
         }
     }
 
     @Override
+    public @Nullable T getStoredData() {
+        if (!initialized) {
+            return null;
+        }
+        return stored;
+    }
+
+        @Override
     public @Nullable Instant lastPollInstant() {
         return lastPollInstant;
     }

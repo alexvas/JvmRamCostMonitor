@@ -5,9 +5,12 @@ import jvmram.controller.GraphRenderer;
 import jvmram.metrics.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -16,6 +19,8 @@ import java.util.List;
 import static jvmram.ui.Utils.COLORS;
 
 public class GraphPanel extends JPanel implements GraphRenderer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int PADDING = 60;
     private static final int LABEL_PADDING = 40;
@@ -74,6 +79,7 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         g2.setStroke(new BasicStroke(GRAPH_STROKE_WIDTH));
 
         var keys = graphPointQueues.keys();
+        LOG.trace("iterating over keys: {}", keys);
 
         for (var key : keys) {
             var metricColor = COLORS.get(key.type());

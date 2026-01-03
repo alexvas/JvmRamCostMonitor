@@ -2,7 +2,9 @@
 package jvmram.controller;
 
 import jvmram.Config;
+import jvmram.metrics.GraphPoint;
 import jvmram.metrics.MetricsFactory;
+import jvmram.metrics.RamMetric;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.MetricVisibility;
 import jvmram.model.graph.UpdateResult;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Collections.synchronizedList;
@@ -38,30 +41,25 @@ class GraphControllerImpl implements GraphController {
         LOG.trace("updating pid {}", pid);
         var metrics = metricsFactory.getOrCreateMetrics(pid, Config.os);
 
-        var exceeds = new ArrayList<UpdateResult.Exceed>();
+        var exceeds = new ArrayList<GraphPoint>();
         boolean relevantUpdate = false;
-        for (MetricType mt : MetricType.values()) {
-            if (!mt.isApplicable(Config.os) || !metricVisibility.isVisible(mt)) {
-                continue;
-            }
+        var effectiveMetrics = Arrays.stream(MetricType.values())
+                .filter(it -> it.isApplicable(Config.os) && metricVisibility.isVisible(it))
+                .toList();
+        LOG.trace("effective metrics: {}", effectiveMetrics);
+        for (var mt : effectiveMetrics) {
             var ramMetric = metrics.get(mt);
             var point = ramMetric.getGraphPoint();
-            var updateResult = graphPointQueues.add(pid, mt, point);
-            @SuppressWarnings("unused") // избыточный результат для полноты перебора в switch expression
-            Void exhaustedResult = switch (updateResult) {
-                case UpdateResult.Exceed ex -> {
-                    relevantUpdate = true;
-                    exceeds.add(ex);
-                    yield null;
-                }
-                case UpdateResult.Signal signal -> switch (signal) {
-                    case REDUNDANT_UPDATE -> null;
-                    case UPDATE_WITHIN_BONDS -> {
-                        relevantUpdate = true;
-                        yield null;
-                    }
-                };
-            };
+
+            if (point.isRedundant()) {
+                continue;
+            }
+
+            relevantUpdate = true;
+
+
+            var exceed = graphPointQueues.add(pid, mt, point);
+            exceeds.addAll(exceed);
         }
 
         if (!exceeds.isEmpty()) {

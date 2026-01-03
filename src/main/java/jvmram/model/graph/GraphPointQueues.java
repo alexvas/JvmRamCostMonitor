@@ -6,6 +6,7 @@ import jvmram.model.metrics.MetricType;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 public interface GraphPointQueues {
@@ -16,11 +17,12 @@ public interface GraphPointQueues {
      * @param pid        - к какому процессу относится измерение
      * @param metricType - тип памяти
      * @param graphPoint - числовое значение (время / количество потребляемых байт)
-     * @return
+     *
+     * @return значения за пределами лимитов очереди (очередей).
      */
-    UpdateResult add(long pid, MetricType metricType, GraphPoint graphPoint);
+    List<GraphPoint> add(long pid, MetricType metricType, GraphPoint graphPoint);
 
-    void handleExceed(Collection<Exceed> exceeds);
+    void handleExceed(Collection<GraphPoint> exceeds);
 
     /**
      * Какие очереди (графики) по типу памяти и номеру процесса содержит модель.

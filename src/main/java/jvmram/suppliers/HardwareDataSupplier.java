@@ -5,14 +5,25 @@ import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 
+/**
+ * Измеряет и хранит последнее измерение данных о потреблении RAM в том или ином аспекте от ОС.
+ * Отдаёт сохранённое значение по запросу.
+ *
+ * @param <T> какие именно данные.
+ */
 public interface HardwareDataSupplier<T extends HardwareData> {
 
     /**
-     * Получить данные о потреблении RAM в том или ином аспекте от ОС.
+     * Получить запомненное значение.
      *
      * @return возвращает ненулевые данные в случае штатной работы, либо null, если что-то пошло не так.
      */
-    @Nullable T getData();
+    @Nullable T getStoredData();
+
+    /**
+     * Измерить и запомнить данные о потреблении RAM.
+     */
+    void measureAndStore();
 
     /**
      * Получить момент последнего запроса данных от ОС.
