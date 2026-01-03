@@ -69,7 +69,7 @@ class GraphControllerImpl implements GraphController {
         }
 
         if (relevantUpdate) {
-            LOG.debug("Repainting after the relevant update of pid {}", pid);
+            LOG.trace("Repainting after the relevant update of pid {}", pid);
             renderers.forEach(GraphRenderer::repaintAsync);
         }
     }

@@ -6,26 +6,24 @@ import jvmram.controller.GraphRenderer;
 import jvmram.metrics.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.MetricVisibility;
+import jvmram.model.graph.Utils;
 import jvmram.model.metrics.MetricType;
 
 import javax.swing.*;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Stroke;
+import java.awt.*;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 public class GraphPanel extends JPanel implements GraphRenderer {
 
     private static final int PADDING = 60;
     private static final int LABEL_PADDING = 40;
-    private static final int STROKE_WIDTH = 2;
+    private static final int GRAPH_STROKE_WIDTH = 1;
+    private static final Duration GRAPH_MIN_DURATION = Duration.ofMinutes(2);
 
     private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
     private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
@@ -81,20 +79,23 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         long minValue = 0;
         long maxBytes = graphPointQueues.maxBytes();
 
-        Instant leftTimeBond = graphPointQueues.minMoment();
-        Instant rightTimeBond = graphPointQueues.maxMoment();
+        var leftTimeBond = graphPointQueues.minMoment();
+        var rightTimeBond = graphPointQueues.maxMoment();
 
         // Добавляем небольшой отступ к диапазону
         maxBytes = Math.round(maxBytes * 1.1d);
 
-        var graphDuration = Duration.between(leftTimeBond, rightTimeBond);
+        var graphDuration = Utils.max(
+                Duration.between(leftTimeBond, rightTimeBond),
+                GRAPH_MIN_DURATION
+        );
 
         // Отрисовка сетки и осей
         drawGrid(g2, width, height, graphWidth, graphHeight, minValue, maxBytes, graphDuration);
 
         // Отрисовка графиков
         var oldStroke = g2.getStroke();
-        g2.setStroke(new BasicStroke(STROKE_WIDTH));
+        g2.setStroke(new BasicStroke(GRAPH_STROKE_WIDTH));
 
         var keys = graphPointQueues.keys();
 
