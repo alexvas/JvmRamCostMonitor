@@ -47,3 +47,23 @@ tasks.withType(JavaCompile).configureEach {
 application {
     mainClass = 'jvmram.Main'
 }
+
+distributions {
+    main {
+        contents {
+            from('README.md') {
+                into 'docs'
+            }
+            from ('src/main/resources/simplelogger.properties') {
+                into 'conf'
+            }
+        }
+    }
+}
+
+startScripts {
+    doLast {
+        unixScript.text = unixScript.text.replace('CLASSPATH=', 'CLASSPATH=$APP_HOME/conf:')
+        windowsScript.text = windowsScript.text.replace('CLASSPATH=', 'CLASSPATH=%APP_HOME%\\conf;')
+    }
+}
