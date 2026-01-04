@@ -11,7 +11,7 @@ import java.lang.invoke.MethodHandles;
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    static void main() {
+    public static void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
         var appScheduler = AppScheduler.getInstance();

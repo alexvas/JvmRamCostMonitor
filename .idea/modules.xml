@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/app-swing-ui/JvmRamCostMonitor.app-swing-ui.main.iml" filepath="$PROJECT_DIR$/.idea/modules/app-swing-ui/JvmRamCostMonitor.app-swing-ui.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/dist-app-swing-ui/JvmRamCostMonitor.dist-app-swing-ui.main.iml" filepath="$PROJECT_DIR$/.idea/modules/dist-app-swing-ui/JvmRamCostMonitor.dist-app-swing-ui.main.iml" />
     </modules>
   </component>
 </project>

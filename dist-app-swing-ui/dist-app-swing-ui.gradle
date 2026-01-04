@@ -1,0 +1,42 @@
+plugins {
+    id("org.beryx.jlink") version "3.2.0"
+}
+
+application {
+    mainModule = 'jvmram.app.swing.dist'
+    mainClass  = 'jvmram.dist.Main'
+}
+
+dependencies {
+    implementation project(':app-swing-ui')
+}
+
+jlink {
+    imageName = 'jvm-ram-cost-monitor-runtime'
+
+    options = [
+        '--strip-debug',
+        '--no-header-files',
+        '--no-man-pages',
+        '--compress=0' // и так будет сжат в инсталлере
+    ]
+
+    launcher {
+        name = 'jvm-ram-cost-monitor'
+    }
+}
+
+jpackage {
+    jpackageHome = System.getProperty('java.home')
+    
+    imageName = 'jvm-ram-cost-monitor'
+    appVersion = '1.0.4'
+    vendor = 'Alexander Vasilev'
+
+    installerType = 'deb' // или dmg, deb, rpm, msi
+
+    installerOptions = [
+        '--linux-menu-group', 'Utilities',
+        '--linux-shortcut'
+    ]
+}
