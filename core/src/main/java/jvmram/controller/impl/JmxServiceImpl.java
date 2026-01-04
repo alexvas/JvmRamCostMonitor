@@ -1,12 +1,13 @@
-package jvmram.controller;
+package jvmram.controller.impl;
 
+import jvmram.controller.JmxService;
 import jvmram.jmx.JmxBeanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 
-class JmxServiceImpl implements JmxService {
+public class JmxServiceImpl implements JmxService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -33,5 +34,5 @@ class JmxServiceImpl implements JmxService {
         // todo: implement
     }
 
-    static final JmxServiceImpl INSTANCE = new JmxServiceImpl();
+    public static final JmxServiceImpl INSTANCE = new JmxServiceImpl();
 }

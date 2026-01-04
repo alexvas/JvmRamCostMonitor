@@ -1,5 +1,7 @@
-package jvmram.metrics;
+package jvmram.metrics.impl;
 
+import jvmram.metrics.MetricsFactory;
+import jvmram.metrics.RamMetric;
 import jvmram.model.metrics.MetricType;
 import jvmram.suppliers.HardwareDataSupplier;
 import jvmram.suppliers.HardwareDataSuppliersFactory;
@@ -13,7 +15,7 @@ import java.util.function.Function;
 import static jvmram.conf.Config.DEV_POLL_INTERVALS;
 import static jvmram.model.metrics.MetricType.*;
 
-class MetricsFactoryImpl implements MetricsFactory {
+public class MetricsFactoryImpl implements MetricsFactory {
 
     private final Map<Long, Map<MetricType, RamMetric>> metrics = new ConcurrentHashMap<>();
 
@@ -55,5 +57,5 @@ class MetricsFactoryImpl implements MetricsFactory {
         return new BaseMetric<>(supplier, DEV_POLL_INTERVALS.get(type), converter);
     }
 
-    static final MetricsFactoryImpl INSTANCE = new MetricsFactoryImpl();
+    public static final MetricsFactoryImpl INSTANCE = new MetricsFactoryImpl();
 }

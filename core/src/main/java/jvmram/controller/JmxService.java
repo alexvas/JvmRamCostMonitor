@@ -1,5 +1,7 @@
 package jvmram.controller;
 
+import jvmram.controller.impl.JmxServiceImpl;
+
 public interface JmxService {
 
     /**

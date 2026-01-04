@@ -1,5 +1,8 @@
-package jvmram.controller;
+package jvmram.controller.impl;
 
+import jvmram.controller.AppScheduler;
+import jvmram.controller.GraphController;
+import jvmram.controller.ProcessController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-class AppSchedulerImpl implements AppScheduler {
+public class AppSchedulerImpl implements AppScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final Duration UPDATE_UI_DELAY = Duration.ofMillis(100);
@@ -54,5 +57,5 @@ class AppSchedulerImpl implements AppScheduler {
         };
     }
 
-    static final AppSchedulerImpl INSTANCE = new AppSchedulerImpl();
+    public static final AppSchedulerImpl INSTANCE = new AppSchedulerImpl();
 }

@@ -1,5 +1,6 @@
 package jvmram.metrics;
 
+import jvmram.metrics.impl.MetricsFactoryImpl;
 import jvmram.model.metrics.MetricType;
 
 import java.util.Map;

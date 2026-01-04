@@ -1,5 +1,6 @@
 package jvmram.model.graph;
 
+import jvmram.model.graph.impl.MetricVisibilityImpl;
 import jvmram.model.metrics.MetricType;
 
 

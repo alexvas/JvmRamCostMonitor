@@ -1,11 +1,13 @@
-package jvmram.process;
+package jvmram.process.iml;
 
 import com.sun.tools.attach.VirtualMachine;
+import jvmram.process.JvmProcessInfo;
+import jvmram.process.ProcessManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class ProcessManagerImpl implements ProcessManager {
+public class ProcessManagerImpl implements ProcessManager {
 
     private ProcessManagerImpl() {
     }
@@ -33,5 +35,5 @@ class ProcessManagerImpl implements ProcessManager {
         return output;
     }
 
-    static final ProcessManager INSTANCE = new ProcessManagerImpl();
+    public static final ProcessManager INSTANCE = new ProcessManagerImpl();
 }

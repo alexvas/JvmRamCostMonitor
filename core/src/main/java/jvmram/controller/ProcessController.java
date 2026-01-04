@@ -1,5 +1,6 @@
 package jvmram.controller;
 
+import jvmram.controller.impl.ProcessControllerImpl;
 import jvmram.process.JvmProcessInfo;
 
 import java.util.Collection;

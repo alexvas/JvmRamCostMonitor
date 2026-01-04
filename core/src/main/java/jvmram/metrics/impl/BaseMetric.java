@@ -1,5 +1,7 @@
-package jvmram.metrics;
+package jvmram.metrics.impl;
 
+import jvmram.metrics.GraphPoint;
+import jvmram.metrics.RamMetric;
 import jvmram.suppliers.HardwareDataSupplier;
 import jvmram.suppliers.data.HardwareData;
 

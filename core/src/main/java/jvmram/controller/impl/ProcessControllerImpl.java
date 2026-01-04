@@ -1,15 +1,15 @@
-package jvmram.controller;
+package jvmram.controller.impl;
 
+import jvmram.controller.ProcessController;
 import jvmram.process.JvmProcessInfo;
 import jvmram.process.ProcessManager;
-import jvmram.util.RwGuarded;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toSet;
 
-class ProcessControllerImpl implements ProcessController {
+public class ProcessControllerImpl implements ProcessController {
 
     private final RwGuarded guarded = RwGuarded.create();
 
@@ -98,5 +98,5 @@ class ProcessControllerImpl implements ProcessController {
     private ProcessControllerImpl() {
     }
 
-    static final ProcessControllerImpl INSTANCE = new ProcessControllerImpl();
+    public static final ProcessControllerImpl INSTANCE = new ProcessControllerImpl();
 }

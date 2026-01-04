@@ -1,10 +1,10 @@
-package jvmram.util;
+package jvmram.controller.impl;
 
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-public class RwGuarded {
+class RwGuarded {
     private final ReadWriteLock lock;
 
     private RwGuarded(ReadWriteLock lock) {

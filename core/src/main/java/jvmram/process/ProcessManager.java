@@ -1,5 +1,7 @@
 package jvmram.process;
 
+import jvmram.process.iml.ProcessManagerImpl;
+
 import java.util.List;
 
 public interface ProcessManager {

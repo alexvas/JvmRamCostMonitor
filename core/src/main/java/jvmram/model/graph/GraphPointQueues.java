@@ -1,6 +1,7 @@
 package jvmram.model.graph;
 
 import jvmram.metrics.GraphPoint;
+import jvmram.model.graph.impl.GraphPointQueuesImpl;
 import jvmram.model.metrics.MetricType;
 
 import java.time.Instant;

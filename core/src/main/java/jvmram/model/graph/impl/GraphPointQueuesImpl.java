@@ -1,6 +1,9 @@
-package jvmram.model.graph;
+package jvmram.model.graph.impl;
 
 import jvmram.metrics.GraphPoint;
+import jvmram.model.graph.GraphKey;
+import jvmram.model.graph.GraphPointQueues;
+import jvmram.model.graph.Utils;
 import jvmram.model.metrics.MetricType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Stream;
 
-class GraphPointQueuesImpl implements GraphPointQueues {
+public class GraphPointQueuesImpl implements GraphPointQueues {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -132,5 +135,5 @@ class GraphPointQueuesImpl implements GraphPointQueues {
         return maxBytes;
     }
 
-    static final GraphPointQueuesImpl INSTANCE = new GraphPointQueuesImpl();
+    public static final GraphPointQueuesImpl INSTANCE = new GraphPointQueuesImpl();
 }

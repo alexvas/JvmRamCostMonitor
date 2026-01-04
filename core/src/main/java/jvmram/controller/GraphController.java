@@ -1,5 +1,7 @@
 package jvmram.controller;
 
+import jvmram.controller.impl.GraphControllerImpl;
+
 public interface GraphController {
 
     static GraphController getInstance() {

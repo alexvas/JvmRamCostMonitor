@@ -1,5 +1,6 @@
-package jvmram.model.graph;
+package jvmram.model.graph.impl;
 
+import jvmram.model.graph.MetricVisibility;
 import jvmram.model.metrics.MetricType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-class MetricVisibilityImpl implements MetricVisibility {
+public class MetricVisibilityImpl implements MetricVisibility {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -37,5 +38,5 @@ class MetricVisibilityImpl implements MetricVisibility {
         LOG.trace("after setting visible: {}", invisibles);
     }
 
-    static final MetricVisibilityImpl INSTANCE = new MetricVisibilityImpl();
+    public static final MetricVisibilityImpl INSTANCE = new MetricVisibilityImpl();
 }

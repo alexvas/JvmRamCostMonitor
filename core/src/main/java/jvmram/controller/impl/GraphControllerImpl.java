@@ -1,7 +1,10 @@
 
-package jvmram.controller;
+package jvmram.controller.impl;
 
 import jvmram.conf.Config;
+import jvmram.controller.GraphController;
+import jvmram.controller.GraphRenderer;
+import jvmram.controller.ProcessController;
 import jvmram.metrics.GraphPoint;
 import jvmram.metrics.MetricsFactory;
 import jvmram.model.graph.GraphPointQueues;
@@ -17,7 +20,7 @@ import java.util.List;
 
 import static java.util.Collections.synchronizedList;
 
-class GraphControllerImpl implements GraphController {
+public class GraphControllerImpl implements GraphController {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -78,5 +81,5 @@ class GraphControllerImpl implements GraphController {
     private GraphControllerImpl() {
     }
 
-    static final GraphControllerImpl INSTANCE = new GraphControllerImpl();
+    public static final GraphControllerImpl INSTANCE = new GraphControllerImpl();
 }
