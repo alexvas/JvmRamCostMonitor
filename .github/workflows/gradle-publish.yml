@@ -112,7 +112,7 @@ jobs:
             **Windows:**
             ```bash
             wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor.zip
-            unzip -x JvmRamCostMonitor.zip
+            unzip JvmRamCostMonitor.zip
             ```
           files: ${{ steps.check_files.outputs.files }}
           draft: false
