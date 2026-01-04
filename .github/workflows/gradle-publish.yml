@@ -82,11 +82,25 @@ jobs:
           name: gradle-distributions
           path: ./build/distributions
       
+      - name: Rename distribution files with version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd build/distributions
+          if [ -f JvmRamCostMonitor.zip ]; then
+            mv JvmRamCostMonitor.zip "JvmRamCostMonitor-${VERSION}.zip"
+            echo "Renamed JvmRamCostMonitor.zip to JvmRamCostMonitor-${VERSION}.zip"
+          fi
+          if [ -f JvmRamCostMonitor.tar ]; then
+            mv JvmRamCostMonitor.tar "JvmRamCostMonitor-${VERSION}.tar"
+            echo "Renamed JvmRamCostMonitor.tar to JvmRamCostMonitor-${VERSION}.tar"
+          fi
+      
       - name: Check files and prepare release
         id: check_files
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           FILES=""
-          for file in build/distributions/*.zip build/distributions/*.tar; do
+          for file in "build/distributions/JvmRamCostMonitor-${VERSION}.zip" "build/distributions/JvmRamCostMonitor-${VERSION}.tar"; do
             if [ -f "$file" ]; then
               FILES="${FILES}${file}"$'\n'
             fi
@@ -106,13 +120,13 @@ jobs:
             ### Установка  
             **Debian/Ubuntu:**
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor.tar
-            sudo tar xf JvmRamCostMonitor.tar
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor-${{ steps.version.outputs.version }}.tar
+            sudo tar xf JvmRamCostMonitor-${{ steps.version.outputs.version }}.tar
             ```  
             **Windows:**
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor.zip
-            unzip JvmRamCostMonitor.zip
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor-${{ steps.version.outputs.version }}.zip
+            unzip JvmRamCostMonitor-${{ steps.version.outputs.version }}.zip
             ```
           files: ${{ steps.check_files.outputs.files }}
           draft: false
