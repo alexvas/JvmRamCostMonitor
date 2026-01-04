@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-simple:2.0.17'
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+
+    implementation project(':core')
+}
+
+
+application {
+    mainClass = 'jvmram.Main'
+}
+
+distributions {
+    main {
+        contents {
+            from('../README.md') {
+                into 'docs'
+            }
+            from ('src/main/resources/simplelogger.properties') {
+                into 'conf'
+            }
+        }
+    }
+}
+
+startScripts {
+    doLast {
+        unixScript.text = unixScript.text.replace('CLASSPATH=', 'CLASSPATH=$APP_HOME/conf:')
+        windowsScript.text = windowsScript.text.replace('CLASSPATH=', 'CLASSPATH=%APP_HOME%\\conf;')
+    }
+}

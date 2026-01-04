@@ -1,2 +1,4 @@
 rootProject.name = 'JvmRamCostMonitor'
-
+include('core', 'app-swing-ui')
+project(':core').buildFileName = 'core.gradle'
+project(':app-swing-ui').buildFileName = 'app-swing-ui.gradle'

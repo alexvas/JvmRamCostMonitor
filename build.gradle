@@ -1,69 +1,23 @@
 plugins {
     id 'java'
-    id 'application'
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'org.slf4j:slf4j-simple:2.0.17'
-    compileOnly 'org.jspecify:jspecify:1.0.0'
-    implementation 'net.java.dev.jna:jna:5.16.0'
-    implementation 'net.java.dev.jna:jna-platform:5.16.0'
-}
-
-sourceSets {
-    main {
-        java {
-            srcDirs = ['src/main/java']
-        }
-        resources {
-            srcDirs = ['src/main/resources']
+subprojects {
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
         }
     }
-    test {
-        java {
-            srcDirs = ['src/test/java']
-        }
+
+    repositories {
+        mavenCentral()
     }
-}
 
-compileJava {
-    options.encoding = 'UTF-8'
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
-
-application {
-    mainClass = 'jvmram.Main'
-}
-
-distributions {
-    main {
-        contents {
-            from('README.md') {
-                into 'docs'
-            }
-            from ('src/main/resources/simplelogger.properties') {
-                into 'conf'
-            }
-        }
+    compileJava {
+        options.encoding = 'UTF-8'
     }
-}
 
-startScripts {
-    doLast {
-        unixScript.text = unixScript.text.replace('CLASSPATH=', 'CLASSPATH=$APP_HOME/conf:')
-        windowsScript.text = windowsScript.text.replace('CLASSPATH=', 'CLASSPATH=%APP_HOME%\\conf;')
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
     }
 }
