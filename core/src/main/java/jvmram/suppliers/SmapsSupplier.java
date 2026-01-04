@@ -1,6 +1,6 @@
 package jvmram.suppliers;
 
-import jvmram.Config;
+import jvmram.conf.Config;
 import jvmram.suppliers.data.SmapsData;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;

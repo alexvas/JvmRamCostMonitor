@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static jvmram.Config.DEV_POLL_INTERVALS;
+import static jvmram.conf.Config.DEV_POLL_INTERVALS;
 import static jvmram.model.metrics.MetricType.*;
 
 class MetricsFactoryImpl implements MetricsFactory {

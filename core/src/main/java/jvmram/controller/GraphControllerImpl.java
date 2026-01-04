@@ -1,7 +1,7 @@
 
 package jvmram.controller;
 
-import jvmram.Config;
+import jvmram.conf.Config;
 import jvmram.metrics.GraphPoint;
 import jvmram.metrics.MetricsFactory;
 import jvmram.model.graph.GraphPointQueues;

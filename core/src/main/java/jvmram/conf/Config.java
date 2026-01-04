@@ -1,4 +1,4 @@
-package jvmram;
+package jvmram.conf;
 
 import jvmram.metrics.RamMetric;
 import jvmram.model.metrics.MetricType;

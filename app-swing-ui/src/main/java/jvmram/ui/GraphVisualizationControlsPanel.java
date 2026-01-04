@@ -1,6 +1,6 @@
 package jvmram.ui;
 
-import jvmram.Config;
+import jvmram.conf.Config;
 import jvmram.model.graph.MetricVisibility;
 import jvmram.model.metrics.MetricType;
 

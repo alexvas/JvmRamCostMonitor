@@ -4,7 +4,7 @@ import com.sun.jna.Native;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinNT;
-import jvmram.Config;
+import jvmram.conf.Config;
 import jvmram.suppliers.data.WinData;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
