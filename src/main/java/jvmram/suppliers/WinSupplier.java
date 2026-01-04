@@ -1,8 +1,6 @@
 package jvmram.suppliers;
 
 import com.sun.jna.Native;
-import com.sun.jna.Structure;
-import com.sun.jna.platform.win32.BaseTSD;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinNT;
@@ -22,38 +20,7 @@ class WinSupplier extends AbstractDataSupplier<WinData> {
     private interface Psapi extends com.sun.jna.Library {
         Psapi INSTANCE = Native.load("psapi", Psapi.class);
 
-        boolean GetProcessMemoryInfo(WinNT.HANDLE hProcess, PROCESS_MEMORY_COUNTERS_EX2 ppsmemCounters, int cb);
-    }
-
-    @Structure.FieldOrder({
-            "cb",
-            "PageFaultCount",
-            "PeakWorkingSetSize",
-            "WorkingSetSize",
-            "QuotaPeakPagedPoolUsage",
-            "QuotaPagedPoolUsage",
-            "QuotaPeakNonPagedPoolUsage",
-            "QuotaNonPagedPoolUsage",
-            "PagefileUsage",
-            "PeakPagefileUsage",
-            "PrivateUsage",
-            "PrivateWorkingSetSize",
-            "SharedCommitUsage"
-    })
-    private static class PROCESS_MEMORY_COUNTERS_EX2 extends Structure {
-        public WinDef.DWORD cb;
-        public WinDef.DWORD PageFaultCount;
-        public BaseTSD.SIZE_T PeakWorkingSetSize;
-        public BaseTSD.SIZE_T WorkingSetSize;
-        public BaseTSD.SIZE_T QuotaPeakPagedPoolUsage;
-        public BaseTSD.SIZE_T QuotaPagedPoolUsage;
-        public BaseTSD.SIZE_T QuotaPeakNonPagedPoolUsage;
-        public BaseTSD.SIZE_T QuotaNonPagedPoolUsage;
-        public BaseTSD.SIZE_T PagefileUsage;
-        public BaseTSD.SIZE_T PeakPagefileUsage;
-        public BaseTSD.SIZE_T PrivateUsage;
-        public BaseTSD.SIZE_T PrivateWorkingSetSize;
-        public WinDef.ULONGLONG SharedCommitUsage;
+        boolean GetProcessMemoryInfo(WinNT.HANDLE hProcess, ProcessMemoryCountersEx2 ppsmemCounters, int cb);
     }
 
     WinSupplier(long pid) {
@@ -77,7 +44,7 @@ class WinSupplier extends AbstractDataSupplier<WinData> {
             return null;
         }
         try {
-            var pmc = new PROCESS_MEMORY_COUNTERS_EX2();
+            var pmc = new ProcessMemoryCountersEx2();
             int size = pmc.size();
             pmc.cb = new WinDef.DWORD(size);
             boolean success = Psapi.INSTANCE.GetProcessMemoryInfo(hProcess, pmc, size);
