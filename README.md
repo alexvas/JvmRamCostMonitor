@@ -7,7 +7,7 @@
 - **Кроссплатформенность**: Linux и Windows
 - **Метрики памяти**:
   - Linux: RSS, PSS, USS
-  - Windows: Working Set, Private Working Set, Private Bytes
+  - Windows: Working Set, Private Bytes
   - JMX: NMT, Used Heap, Committed Heap
 - **Мониторинг группы процессов**: с опцией включения потомков
 - **Режимы отображения**: кумулятивный или раздельный для группы процессов
@@ -55,7 +55,6 @@ java -jar app.jar
 
 - JMX подключение работает только для локальных процессов
 - Для работы JMX функций (GC, Heap Dump) процесс должен быть запущен с соответствующими опциями JMX
-- NMT метрики требуют включения Native Memory Tracking в Java процессе
 
 ## О специфичных для Linux метриках
 
