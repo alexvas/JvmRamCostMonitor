@@ -38,27 +38,29 @@ message File {
   string file_name = 2;
 }
 
-message GraphPoint {
-  google.protobuf.Timestamp moment = 1;
-  int64 bytes = 2;
-}
-
-enum MetricType {
-  UNKNOWN = 0;
-
-  RSS = 1;
-  PSS = 2;
-  USS = 3;
-  WS = 4;
-  PB = 5;
-  HEAP_USED = 6;
-  HEAP_COMMITTED = 7;
-  NMT_USED = 8;
-  NMT_COMMITTED = 9;
-}
-
 message GraphQueue {
+
+  enum MetricType {
+    UNKNOWN = 0;
+
+    RSS = 1;
+    PSS = 2;
+    USS = 3;
+    WS = 4;
+    PB = 5;
+    HEAP_USED = 6;
+    HEAP_COMMITTED = 7;
+    NMT_USED = 8;
+    NMT_COMMITTED = 9;
+  }
+
   MetricType type = 1;
+
+  message GraphPoint {
+    google.protobuf.Timestamp moment = 1;
+    int64 bytes = 2;
+  }
+
   repeated GraphPoint points = 2;
 }
 

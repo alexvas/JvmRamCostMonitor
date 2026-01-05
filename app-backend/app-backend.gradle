@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id 'application'
+    alias(libs.plugins.protobuf)
+}
+
+dependencies {
+    implementation libs.slf4j.api
+    runtimeOnly libs.slf4j.simple
+    compileOnly libs.jspecify
+
+    implementation libs.grpc.protobuf
+    implementation libs.grpc.services
+    runtimeOnly libs.grpc.netty.shaded
+    protobuf files('../proto')
+
+    implementation project(':core')
+}
+
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
+    plugins {
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}" }
+    }
+    generateProtoTasks {
+        all()*.plugins { grpc {} }
+    }
+}
+
+application {
+    mainClass = 'jvmram.backend.Main'
+}
+
+distributions {
+    main {
+        contents {
+            from('../README.md') {
+                into 'docs'
+            }
+            from ('src/main/resources/simplelogger.properties') {
+                into 'conf'
+            }
+        }
+    }
+}
+
+startScripts {
+    doLast {
+        unixScript.text = unixScript.text.replace('CLASSPATH=', 'CLASSPATH=$APP_HOME/conf:')
+        windowsScript.text = windowsScript.text.replace('CLASSPATH=', 'CLASSPATH=%APP_HOME%\\conf;')
+    }
+}
