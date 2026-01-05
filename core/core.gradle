@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-    implementation 'org.slf4j:slf4j-api:2.0.17'
-    compileOnly 'org.jspecify:jspecify:1.0.0'
-    implementation 'net.java.dev.jna:jna:5.16.0'
-    implementation 'net.java.dev.jna:jna-platform:5.16.0'
+    implementation libs.slf4j.api
+    compileOnly libs.jspecify
+    implementation libs.jna
+    implementation libs.jna.platform
 }
