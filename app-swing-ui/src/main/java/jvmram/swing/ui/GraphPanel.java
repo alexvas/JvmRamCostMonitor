@@ -1,4 +1,4 @@
-package jvmram.ui;
+package jvmram.swing.ui;
 
 import jvmram.controller.GraphController;
 import jvmram.controller.GraphRenderer;
@@ -16,7 +16,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
-import static jvmram.ui.Utils.COLORS;
+import static jvmram.swing.ui.Utils.COLORS;
 
 public class GraphPanel extends JPanel implements GraphRenderer {
 

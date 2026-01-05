@@ -1,11 +1,11 @@
-package jvmram.ui;
+package jvmram.swing.ui;
 
 import jvmram.controller.JmxService;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import static jvmram.ui.Utils.parsePidFromProcessDisplayName;
+import static jvmram.swing.ui.Utils.parsePidFromProcessDisplayName;
 
 /**
  * Послать сигнал управления JVM:

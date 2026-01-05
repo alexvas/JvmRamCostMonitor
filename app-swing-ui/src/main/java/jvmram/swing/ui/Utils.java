@@ -1,4 +1,4 @@
-package jvmram.ui;
+package jvmram.swing.ui;
 
 import jvmram.model.metrics.MetricType;
 

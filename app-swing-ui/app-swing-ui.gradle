@@ -13,7 +13,7 @@ dependencies {
 
 
 application {
-    mainClass = 'jvmram.Main'
+    mainClass = 'jvmram.swing.Main'
 }
 
 distributions {

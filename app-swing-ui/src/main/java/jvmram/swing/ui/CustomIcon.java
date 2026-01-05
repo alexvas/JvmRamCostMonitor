@@ -1,4 +1,4 @@
-package jvmram.ui;
+package jvmram.swing.ui;
 
 import jvmram.model.metrics.MetricType;
 
@@ -6,7 +6,7 @@ import javax.swing.*;
 
 import java.awt.*;
 
-import static jvmram.ui.Utils.COLORS;
+import static jvmram.swing.ui.Utils.COLORS;
 
 public class CustomIcon implements Icon {
     private static final int SIZE = 13;

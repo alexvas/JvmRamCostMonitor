@@ -1,4 +1,4 @@
-package jvmram.ui;
+package jvmram.swing.ui;
 
 import javax.swing.*;
 

@@ -1,4 +1,4 @@
-package jvmram.ui;
+package jvmram.swing.ui;
 
 import jvmram.controller.ProcessController;
 import jvmram.process.JvmProcessInfo;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static jvmram.ui.Utils.*;
+import static jvmram.swing.ui.Utils.*;
 
 public class ProcessPanel extends JPanel {
 

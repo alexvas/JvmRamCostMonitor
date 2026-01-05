@@ -3,5 +3,5 @@ module jvmram.app.swing.ui {
     requires java.desktop;
     requires jvmram.core;
     requires org.slf4j;
-    exports jvmram;
+    exports jvmram.swing;
 }

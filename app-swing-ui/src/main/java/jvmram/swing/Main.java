@@ -1,7 +1,7 @@
-package jvmram;
+package jvmram.swing;
 
 import jvmram.controller.AppScheduler;
-import jvmram.ui.MainWindow;
+import jvmram.swing.ui.MainWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

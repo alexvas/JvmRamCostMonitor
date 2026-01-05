@@ -3,6 +3,6 @@ package jvmram.dist;
 public class Main {
 
     void main() {
-        jvmram.Main.main();
+        jvmram.swing.Main.main();
     }
 }
