@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Сервер, который управляет стартом и остановом сервера BackendImpl
  */
-class JmvRamBackendManager {
+class JvmRamBackendManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -51,7 +51,7 @@ class JmvRamBackendManager {
             // выключиться собственным JVM shutdown hook.
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
             try {
-                JmvRamBackendManager.this.stop();
+                JvmRamBackendManager.this.stop();
             } catch (InterruptedException e) {
                 if (server != null) {
                     server.shutdownNow();

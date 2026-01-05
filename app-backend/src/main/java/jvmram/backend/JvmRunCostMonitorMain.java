@@ -21,7 +21,7 @@ public class JvmRunCostMonitorMain {
         var graphPointQueues = GraphPointQueues.getInstance();
         var jmxService = JmxService.getInstance();
 
-        var backendManager = new JmvRamBackendManager();
+        var backendManager = new JvmRamBackendManager();
         var backend = new JvmRamBackendImpl(processController, graphController, graphPointQueues, jmxService);
         backendManager.start(50553, backend);
         backendManager.blockUntilShutdown();
