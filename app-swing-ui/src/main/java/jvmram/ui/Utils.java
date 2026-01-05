@@ -17,11 +17,9 @@ public class Utils {
     static {
         for (MetricType mt : MetricType.values()) {
             Color color = switch (mt) {
-                case RSS -> Color.RED;
+                case RSS, WS -> Color.RED;
                 case PSS -> Color.GREEN;
-                case USS -> Color.BLUE;
-                case WS -> new Color(97, 110, 18);
-                case PB -> Color.ORANGE;
+                case USS, PB -> Color.BLUE;
                 case HEAP_USED -> Color.MAGENTA;
                 case HEAP_COMMITTED -> Color.CYAN;
                 case NMT_USED -> new Color(128, 0, 255);
