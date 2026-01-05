@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "jvmram.proto";
+option java_outer_classname = "JvmRamProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+package jvmram;
+
+service AppBackend {
+  rpc GetJvmProcessList (google.protobuf.Empty) returns (JvmProcessListResponse);
+  rpc FollowPid (Pid) returns (google.protobuf.Empty);
+  rpc UnFollowPid (Pid) returns (google.protobuf.Empty);
+
+  rpc ListenGraphQueues (google.protobuf.Empty) returns (stream GraphQueues);
+
+  rpc TriggerGc (Pid) returns (google.protobuf.Empty);
+  rpc DumpHeap (File) returns (google.protobuf.Empty);
+}
+
+message Pid {
+  int64 pid = 1;
+}
+
+message ProcInfo {
+  int64 pid = 1;
+  string display_name = 2;
+}
+
+message JvmProcessListResponse {
+  repeated ProcInfo infos = 1;
+}
+
+message File {
+  int64 pid = 1;
+  string file_name = 2;
+}
+
+message GraphPoint {
+  google.protobuf.Timestamp moment = 1;
+  int64 bytes = 2;
+}
+
+enum MetricType {
+  UNKNOWN = 0;
+
+  RSS = 1;
+  PSS = 2;
+  USS = 3;
+  WS = 4;
+  PB = 5;
+  HEAP_USED = 6;
+  HEAP_COMMITTED = 7;
+  NMT_USED = 8;
+  NMT_COMMITTED = 9;
+}
+
+message GraphQueue {
+  MetricType type = 1;
+  repeated GraphPoint points = 2;
+}
+
+message GraphQueues {
+  int64 pid = 1;
+  repeated GraphQueue queues = 2;
+}
