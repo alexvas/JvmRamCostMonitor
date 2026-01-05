@@ -1,7 +1,20 @@
 rootProject.name = 'JvmRamCostMonitor'
 include('core', 'app-backend', 'app-swing-ui', 'dist-app-swing-ui', 'proto')
-project(':core').buildFileName = 'core.gradle'
-project(':app-backend').buildFileName = 'app-backend.gradle'
-project(':app-swing-ui').buildFileName = 'app-swing-ui.gradle'
-project(':dist-app-swing-ui').buildFileName = 'dist-app-swing-ui.gradle'
-project(':proto').buildFileName = 'proto.gradle'
+
+// назначаем сборочным скриптам понятные имена:
+// core -> core.gradle
+// app-swing-ui -> app-swing-ui.gradle
+// и так далее
+def configureBuildFile(ProjectDescriptor pd) {
+    pd.buildFileName = "${pd.name}.gradle"
+    if (!pd.buildFile.isFile()) {
+        throw new IllegalArgumentException("${pd.buildFile} must exist")
+    }
+    pd.children.forEach {
+        configureBuildFile(it)
+    }
+}
+
+rootProject.children.forEach {
+    configureBuildFile(it)
+}
