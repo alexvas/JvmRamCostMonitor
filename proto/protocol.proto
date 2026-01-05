@@ -10,10 +10,9 @@ import "google/protobuf/empty.proto";
 package jvmram;
 
 service AppBackend {
-  rpc GetJvmProcessList (google.protobuf.Empty) returns (JvmProcessListResponse);
-  rpc FollowPid (Pid) returns (google.protobuf.Empty);
-  rpc UnFollowPid (Pid) returns (google.protobuf.Empty);
+  rpc SetFollowingPids (JvmFollowPidRequest) returns (google.protobuf.Empty);
 
+  rpc ListenJvmProcessList (google.protobuf.Empty) returns (stream JvmProcessListResponse);
   rpc ListenGraphQueues (google.protobuf.Empty) returns (stream GraphQueues);
 
   rpc TriggerGc (Pid) returns (google.protobuf.Empty);
@@ -27,6 +26,10 @@ message Pid {
 message ProcInfo {
   int64 pid = 1;
   string display_name = 2;
+}
+
+message JvmFollowPidRequest {
+  repeated Pid pids = 1;
 }
 
 message JvmProcessListResponse {

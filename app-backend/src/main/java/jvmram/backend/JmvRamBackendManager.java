@@ -1,0 +1,90 @@
+package jvmram.backend;
+
+import io.grpc.BindableService;
+import io.grpc.Grpc;
+import io.grpc.InsecureServerCredentials;
+import io.grpc.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Сервер, который управляет стартом и остановом сервера BackendImpl
+ */
+class JmvRamBackendManager {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private volatile Server server;
+
+    void start(@SuppressWarnings("SameParameterValue") int port, BindableService service) {
+
+        /*
+         * По умолчанию gRPC использует глобальный разделяемый Executor.newCachedThreadPool(),
+         * чтобы gRPC производить вызовы приложения. Это удобно, но может привести к созданию
+         * большого числа потоков в случае большого количества вызовов (RPC). Зачастую лучше ограничить
+         * число потоков, которое ваше приложение использует для обработки вызовов и позволить
+         * RPC копиться в очереди, когда ЦПУ занят. Подходящее число потоков сильно меняется
+         * от приложения к приложению. Приложения с асинхронной обработкой вызовов обычно не
+         * нуждаются в числе потоков, большем числа ядер ЦПУ.
+         */
+        var executor = Executors.newFixedThreadPool(2);
+        server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
+                .executor(executor)
+                .addService(service)
+                .build();
+
+        try {
+            server.start();
+        } catch (IOException e) {
+            LOG.error("Failed to start server using port {}", port, e);
+            return;
+        }
+
+        LOG.info("Server started, listening on {}", port);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Здесь используем stderr, поскольку logger уже может успеть
+            // выключиться собственным JVM shutdown hook.
+            System.err.println("*** shutting down gRPC server since JVM is shutting down");
+            try {
+                JmvRamBackendManager.this.stop();
+            } catch (InterruptedException e) {
+                if (server != null) {
+                    server.shutdownNow();
+                }
+                // Аналогично: печатаем в STDERR
+                e.printStackTrace(System.err);
+            } finally {
+                executor.shutdown();
+            }
+            // Аналогично: печатаем в STDERR
+            System.err.println("*** server shut down");
+        }));
+    }
+
+    private void stop() throws InterruptedException {
+        if (server != null) {
+            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+        }
+    }
+
+    /**
+     * Ждём окончания работы в главном (main) потоке, поскольку библиотека grpc
+     * использует потоки-демоны.
+     */
+    void blockUntilShutdown() {
+        if (server != null) {
+            try {
+                server.awaitTermination();
+            } catch (InterruptedException e) {
+                // Ничего не делаем. JVM и так останавливается. Просто выходим отсюда.
+            }
+        }
+    }
+
+
+}
