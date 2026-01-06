@@ -1,15 +1,24 @@
 package jvmram.swing.client.impl;
 
+import io.grpc.Channel;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.metrics.MetricType;
+import jvmram.proto.AppBackendGrpc;
 import jvmram.proto.ProcInfo;
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class JvmRamBackendClientImpl implements JvmRamBackendClient {
+public class JvmRamClientImpl implements JvmRamClient {
+
+    private final AppBackendGrpc.AppBackendBlockingStub blockingStub;
+
+    public JvmRamClientImpl(Channel channel) {
+        blockingStub = AppBackendGrpc.newBlockingStub(channel);
+    }
+
     @Override
     public void gc(long pid) {
 

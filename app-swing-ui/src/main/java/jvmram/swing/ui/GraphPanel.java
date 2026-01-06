@@ -3,7 +3,7 @@ package jvmram.swing.ui;
 import jvmram.model.graph.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.Utils;
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public class GraphPanel extends JPanel {
     private static final int GRAPH_STROKE_WIDTH = 1;
     private static final Duration GRAPH_MIN_DURATION = Duration.ofMinutes(2);
 
-    public GraphPanel(JvmRamBackendClient client) {
+    public GraphPanel(JvmRamClient client) {
         client.addGraphChangesListener(this::repaintAsync);
     }
 

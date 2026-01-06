@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface JvmRamBackendClient {
+public interface JvmRamClient {
     void gc(long pid);
 
     void createHeapDump(String filepath);

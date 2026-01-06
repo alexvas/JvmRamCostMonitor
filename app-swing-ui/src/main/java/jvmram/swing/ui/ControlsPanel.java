@@ -1,12 +1,12 @@
 package jvmram.swing.ui;
 
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 
 import javax.swing.*;
 
 public class ControlsPanel extends JPanel {
 
-    public ControlsPanel(JvmRamBackendClient client) {
+    public ControlsPanel(JvmRamClient client) {
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         

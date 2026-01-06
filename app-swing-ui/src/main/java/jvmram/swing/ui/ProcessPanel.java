@@ -1,7 +1,7 @@
 package jvmram.swing.ui;
 
 import jvmram.proto.ProcInfo;
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +16,7 @@ public class ProcessPanel extends JPanel {
     private final JPanel contentWidget = new JPanel();
     private final JButton showButton;
     private final DefaultListModel<String> listModel = new DefaultListModel<>();
-    private final JvmRamBackendClient client;
+    private final JvmRamClient client;
 
     /**
      * Это костыль, сынок.
@@ -29,7 +29,7 @@ public class ProcessPanel extends JPanel {
     private final JList<String> processList;
     private final JCheckBox childrenCheck;
 
-    public ProcessPanel(JvmRamBackendClient client) {
+    public ProcessPanel(JvmRamClient client) {
         this.client = client;
         setLayout(new BorderLayout());
 

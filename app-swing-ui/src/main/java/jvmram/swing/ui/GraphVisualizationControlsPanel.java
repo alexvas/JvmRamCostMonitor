@@ -1,16 +1,16 @@
 package jvmram.swing.ui;
 
 import jvmram.model.metrics.MetricType;
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 
 import javax.swing.*;
 import java.util.List;
 
 public class GraphVisualizationControlsPanel extends JPanel {
 
-    private final JvmRamBackendClient client;
+    private final JvmRamClient client;
 
-    public GraphVisualizationControlsPanel(JvmRamBackendClient client) {
+    public GraphVisualizationControlsPanel(JvmRamClient client) {
         this.client = client;
         setBorder(BorderFactory.createTitledBorder("Отображаемые метрики"));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));

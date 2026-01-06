@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 class JvmRamBackendManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final int WORKER_THREADS_COUNT = 2;
 
     private volatile Server server;
 
@@ -32,7 +34,7 @@ class JvmRamBackendManager {
          * от приложения к приложению. Приложения с асинхронной обработкой вызовов обычно не
          * нуждаются в числе потоков, большем числа ядер ЦПУ.
          */
-        var executor = Executors.newFixedThreadPool(2);
+        var executor = Executors.newFixedThreadPool(WORKER_THREADS_COUNT);
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .executor(executor)
                 .addService(service)
@@ -46,30 +48,28 @@ class JvmRamBackendManager {
         }
 
         LOG.info("Server started, listening on {}", port);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Здесь используем stderr, поскольку logger уже может успеть
-            // выключиться собственным JVM shutdown hook.
-            System.err.println("*** shutting down gRPC server since JVM is shutting down");
-            try {
-                JvmRamBackendManager.this.stop();
-            } catch (InterruptedException e) {
-                if (server != null) {
-                    server.shutdownNow();
-                }
-                // Аналогично: печатаем в STDERR
-                e.printStackTrace(System.err);
-            } finally {
-                executor.shutdown();
-            }
-            // Аналогично: печатаем в STDERR
-            System.err.println("*** server shut down");
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown(executor)));
     }
 
-    private void stop() throws InterruptedException {
-        if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+    private void shutdown(ExecutorService executor) {
+        // Здесь используем stderr, поскольку logger уже может успеть
+        // выключиться собственным JVM shutdown hook.
+        System.err.println("*** shutting down gRPC server since JVM is shutting down");
+        try {
+            if (server != null) {
+                server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            if (server != null) {
+                server.shutdownNow();
+            }
+            // Аналогично: печатаем в STDERR
+            e.printStackTrace(System.err);
+        } finally {
+            executor.shutdown();
         }
+        // Аналогично: печатаем в STDERR
+        System.err.println("*** server shut down");
     }
 
     /**

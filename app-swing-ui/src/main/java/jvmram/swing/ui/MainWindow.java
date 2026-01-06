@@ -1,6 +1,6 @@
 package jvmram.swing.ui;
 
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,7 @@ public class MainWindow extends JFrame {
     private final ControlsPanel controlsPanel;
     private final ProcessPanel processPanel;
     
-    public MainWindow(JvmRamBackendClient client) {
+    public MainWindow(JvmRamClient client) {
         graphPanel = new GraphPanel(client);
         controlsPanel = new ControlsPanel(client);
         processPanel = new ProcessPanel(client);

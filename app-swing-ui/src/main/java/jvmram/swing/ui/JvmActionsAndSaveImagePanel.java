@@ -1,6 +1,6 @@
 package jvmram.swing.ui;
 
-import jvmram.swing.client.JvmRamBackendClient;
+import jvmram.swing.client.JvmRamClient;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -17,12 +17,12 @@ public class JvmActionsAndSaveImagePanel extends JPanel {
 
     private final DefaultListModel<String> listModel = new DefaultListModel<>();
     private final JList<String> followingProcessesList = new JList<>(listModel);
-    private final JvmRamBackendClient jvmRamBackendClient;
+    private final JvmRamClient jvmRamClient;
 
     private volatile long currentPid = NO_PID_SELECTED;
 
-    public JvmActionsAndSaveImagePanel(JvmRamBackendClient jvmRamBackendClient) {
-        this.jvmRamBackendClient = jvmRamBackendClient;
+    public JvmActionsAndSaveImagePanel(JvmRamClient jvmRamClient) {
+        this.jvmRamClient = jvmRamClient;
         setBorder(BorderFactory.createTitledBorder("Действия"));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -57,7 +57,7 @@ public class JvmActionsAndSaveImagePanel extends JPanel {
         if (pid == NO_PID_SELECTED) {
             return;
         }
-        jvmRamBackendClient.gc(pid);
+        jvmRamClient.gc(pid);
     }
 
     private void onFollowingProcessSelected() {
@@ -80,7 +80,7 @@ public class JvmActionsAndSaveImagePanel extends JPanel {
         
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             var filepath = fileChooser.getSelectedFile().getAbsolutePath();
-            jvmRamBackendClient.createHeapDump(filepath);
+            jvmRamClient.createHeapDump(filepath);
         }
     }
     

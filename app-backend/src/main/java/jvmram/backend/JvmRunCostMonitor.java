@@ -10,10 +10,18 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 
-public class JvmRunCostMonitorMain {
+public class JvmRunCostMonitor {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     static void main() {
+        var main = new JvmRunCostMonitor();
+        main.setup(53333);
+        main.blockUntilShutdown();
+    }
+
+    private volatile JvmRamBackendManager backendManager;
+
+    public void setup(int port) {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
         var processController = ProcessController.getInstance();
@@ -21,13 +29,15 @@ public class JvmRunCostMonitorMain {
         var graphPointQueues = GraphPointQueues.getInstance();
         var jmxService = JmxService.getInstance();
 
-        var backendManager = new JvmRamBackendManager();
+        backendManager = new JvmRamBackendManager();
         var backend = new JvmRamBackendImpl(processController, graphController, graphPointQueues, jmxService);
-        backendManager.start(50553, backend);
-        backendManager.blockUntilShutdown();
+        backendManager.start(port, backend);
 
         var appScheduler = AppScheduler.getInstance();
         appScheduler.start();
+    }
 
+    public void blockUntilShutdown() {
+        backendManager.blockUntilShutdown();
     }
 }
