@@ -1,19 +1,10 @@
 package jvmram.metrics;
 
+import jvmram.model.graph.GraphPoint;
+
 import java.time.Duration;
 
 public interface RamMetric {
-
-    /**
-     * Нет данных в связи со сбоем в работе или логике.
-     */
-    long NO_DATA = -1;
-
-    /**
-     * Данные прежние. Следует использовать данные с предыдущего опроса,
-     * поскольку таймаут опроса ещё не истёк.
-     */
-    long SAME_DATA = -2;
 
     /**
      * Получить значение метрики в байтах
@@ -28,9 +19,4 @@ public interface RamMetric {
      * @param pollInterval - новый таймаут опроса.
      */
     void updatePollInterval(Duration pollInterval);
-
-    enum Os {
-        LINUX,
-        WINDOWS
-    }
 }

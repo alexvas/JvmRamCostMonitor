@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 
-import static jvmram.metrics.RamMetric.Os.LINUX;
+import static jvmram.model.metrics.Os.LINUX;
 
 class MemInfoSupplier extends AbstractFileReaderSupplier<MemInfoData> {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

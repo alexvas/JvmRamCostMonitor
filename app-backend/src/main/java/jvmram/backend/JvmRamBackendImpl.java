@@ -6,7 +6,7 @@ import io.grpc.stub.StreamObserver;
 import jvmram.controller.GraphController;
 import jvmram.controller.JmxService;
 import jvmram.controller.ProcessController;
-import jvmram.metrics.GraphPoint;
+import jvmram.model.graph.GraphPoint;
 import jvmram.model.graph.GraphKey;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.process.JvmProcessInfo;

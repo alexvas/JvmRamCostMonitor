@@ -1,8 +1,10 @@
 package jvmram.dist;
 
+import jvmram.swing.JvmRamCostMonitorSwingMain;
+
 public class Main {
 
     void main() {
-        jvmram.swing.Main.main();
+        JvmRamCostMonitorSwingMain.main();
     }
 }

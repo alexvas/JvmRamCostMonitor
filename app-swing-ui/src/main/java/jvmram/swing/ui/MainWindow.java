@@ -1,14 +1,20 @@
 package jvmram.swing.ui;
 
+import jvmram.swing.client.JvmRamBackendClient;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class MainWindow extends JFrame {
 
-    private final GraphPanel graphPanel = new GraphPanel();
-    private final ControlsPanel controlsPanel = new ControlsPanel();
+    private final GraphPanel graphPanel;
+    private final ControlsPanel controlsPanel;
+    private final ProcessPanel processPanel;
     
-    public MainWindow() {
+    public MainWindow(JvmRamBackendClient client) {
+        graphPanel = new GraphPanel(client);
+        controlsPanel = new ControlsPanel(client);
+        processPanel = new ProcessPanel(client);
         setTitle("Jvm RAM Cost Monitor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
@@ -24,7 +30,6 @@ public class MainWindow extends JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
         // Панель процессов (слева)
-        var processPanel = new ProcessPanel();
         mainPanel.add(processPanel, BorderLayout.WEST);
         
         // Вертикальный контейнер для графика и панели управления

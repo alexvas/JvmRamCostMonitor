@@ -3,6 +3,7 @@ package jvmram.metrics.impl;
 import jvmram.metrics.MetricsFactory;
 import jvmram.metrics.RamMetric;
 import jvmram.model.metrics.MetricType;
+import jvmram.model.metrics.Os;
 import jvmram.suppliers.HardwareDataSupplier;
 import jvmram.suppliers.HardwareDataSuppliersFactory;
 import jvmram.suppliers.data.*;
@@ -25,11 +26,11 @@ public class MetricsFactoryImpl implements MetricsFactory {
     }
 
     @Override
-    public Map<MetricType, RamMetric> getOrCreateMetrics(long pid, RamMetric.Os os) {
+    public Map<MetricType, RamMetric> getOrCreateMetrics(long pid, Os os) {
         return metrics.computeIfAbsent(pid, ignored -> createMetricMap(pid, os));
     }
 
-    private Map<MetricType, RamMetric> createMetricMap(long pid, RamMetric.Os os) {
+    private Map<MetricType, RamMetric> createMetricMap(long pid, Os os) {
         var osSpecific = switch (os) {
             case LINUX -> Map.of(
                     RSS, createMetrics(pid, RSS, MemInfoData::rss),

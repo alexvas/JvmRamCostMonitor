@@ -1,5 +1,5 @@
 rootProject.name = 'JvmRamCostMonitor'
-include('core', 'app-backend', 'app-swing-ui', 'dist-app-swing-ui', 'proto')
+include('model', 'core', 'app-backend', 'app-swing-ui', 'dist-app-swing-ui', 'proto')
 
 // назначаем сборочным скриптам понятные имена:
 // core -> core.gradle

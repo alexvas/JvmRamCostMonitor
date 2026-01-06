@@ -1,7 +1,7 @@
 package jvmram.metrics.impl;
 
-import jvmram.metrics.GraphPoint;
 import jvmram.metrics.RamMetric;
+import jvmram.model.graph.GraphPoint;
 import jvmram.suppliers.HardwareDataSupplier;
 import jvmram.suppliers.data.HardwareData;
 
@@ -9,6 +9,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
+
+import static jvmram.model.graph.GraphPoint.NO_DATA;
+import static jvmram.model.graph.GraphPoint.SAME_DATA;
 
 class BaseMetric<T extends HardwareData> implements RamMetric {
     private final HardwareDataSupplier<T> supplier;
@@ -21,16 +24,6 @@ class BaseMetric<T extends HardwareData> implements RamMetric {
         this.pollInterval = pollInterval;
         this.converter = converter;
     }
-
-    private static final GraphPoint SAME_DATA = new GraphPoint(
-            Instant.now(),
-            RamMetric.SAME_DATA
-    );
-
-    private static final GraphPoint NO_DATA = new GraphPoint(
-            Instant.now(),
-            RamMetric.NO_DATA
-    );
 
     @Override
     public GraphPoint getGraphPoint() {

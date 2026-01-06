@@ -1,24 +1,26 @@
 package jvmram.swing.ui;
 
-import jvmram.conf.Config;
-import jvmram.model.graph.MetricVisibility;
 import jvmram.model.metrics.MetricType;
+import jvmram.swing.client.JvmRamBackendClient;
 
 import javax.swing.*;
-import java.util.Arrays;
+import java.util.List;
 
 public class GraphVisualizationControlsPanel extends JPanel {
-    private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
 
-    public GraphVisualizationControlsPanel() {
+    private final JvmRamBackendClient client;
+
+    public GraphVisualizationControlsPanel(JvmRamBackendClient client) {
+        this.client = client;
         setBorder(BorderFactory.createTitledBorder("Отображаемые метрики"));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         JPanel metricsLayout = new JPanel();
         metricsLayout.setLayout(new BoxLayout(metricsLayout, BoxLayout.Y_AXIS));
 
-        Arrays.stream(MetricType.values())
-                .filter(mt -> mt.isApplicable(Config.os))
+        List<MetricType> applicableMetrics = client.getApplicableMetrics();
+
+        applicableMetrics
                 .forEach(mt -> addMetricCheck(metricsLayout, mt));
 
         add(metricsLayout);
@@ -29,7 +31,8 @@ public class GraphVisualizationControlsPanel extends JPanel {
         var checkBox = new JCheckBox(title);
         checkBox.setIcon(new CustomIcon(mt));
 
-        Boolean defaultVisible = Config.DEFAULT_METRIC_VISIBILITY.get(mt);
+        // todo: config default visibility
+        Boolean defaultVisible = Boolean.TRUE;
         boolean visible = defaultVisible != null && defaultVisible;
         checkBox.setSelected(visible);
         setVisible(mt, visible);
@@ -39,9 +42,9 @@ public class GraphVisualizationControlsPanel extends JPanel {
 
     private void setVisible(MetricType metricType, boolean selected) {
         if (selected) {
-            metricVisibility.setVisible(metricType);
+            client.setVisible(metricType);
         } else {
-            metricVisibility.setInvisible(metricType);
+            client.setInvisible(metricType);
         }
     }
 

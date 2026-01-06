@@ -1,6 +1,6 @@
-package jvmram.model.graph.impl;
+package jvmram.visibility.impl;
 
-import jvmram.model.graph.MetricVisibility;
+import jvmram.visibility.MetricVisibility;
 import jvmram.model.metrics.MetricType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

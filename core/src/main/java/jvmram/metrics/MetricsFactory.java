@@ -2,11 +2,12 @@ package jvmram.metrics;
 
 import jvmram.metrics.impl.MetricsFactoryImpl;
 import jvmram.model.metrics.MetricType;
+import jvmram.model.metrics.Os;
 
 import java.util.Map;
 
 public interface MetricsFactory {
-    Map<MetricType, RamMetric> getOrCreateMetrics(long pid, RamMetric.Os os);
+    Map<MetricType, RamMetric> getOrCreateMetrics(long pid, Os os);
 
     static MetricsFactory getInstance() {
         return MetricsFactoryImpl.INSTANCE;

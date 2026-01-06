@@ -1,7 +1,7 @@
 package jvmram.conf;
 
-import jvmram.metrics.RamMetric;
 import jvmram.model.metrics.MetricType;
+import jvmram.model.metrics.Os;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +10,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
+
+import static jvmram.model.metrics.Os.LINUX;
+import static jvmram.model.metrics.Os.WINDOWS;
 
 public final class Config {
 
@@ -24,7 +27,7 @@ public final class Config {
     public static final Map<MetricType, Boolean> DEFAULT_METRIC_VISIBILITY = new EnumMap<>(MetricType.class);
 
     // Определение платформы
-    public static final RamMetric.Os os;
+    public static final Os os;
 
     static {
         // Инициализация интервалов опроса
@@ -68,9 +71,9 @@ public final class Config {
         // Определение платформы
         var osName = System.getProperty("os.name", "").toLowerCase();
         if (osName.contains("linux")) {
-            os = RamMetric.Os.LINUX;
+            os = LINUX;
         } else if (osName.contains("windows")) {
-            os = RamMetric.Os.WINDOWS;
+            os = WINDOWS;
         } else {
             LOG.error("Unsupported OS {}", osName);
             System.exit(2);

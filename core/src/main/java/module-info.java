@@ -5,10 +5,10 @@ module jvmram.core {
     requires jdk.attach;
     requires static org.jspecify;
     requires org.slf4j;
+    requires jvmram.model;
+
     exports jvmram.conf;
     exports jvmram.metrics;
     exports jvmram.controller;
-    exports jvmram.model.graph;
-    exports jvmram.model.metrics;
     exports jvmram.process;
 }

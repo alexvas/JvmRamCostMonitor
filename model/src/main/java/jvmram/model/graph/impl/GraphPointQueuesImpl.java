@@ -1,7 +1,7 @@
 package jvmram.model.graph.impl;
 
-import jvmram.metrics.GraphPoint;
 import jvmram.model.graph.GraphKey;
+import jvmram.model.graph.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.Utils;
 import jvmram.model.metrics.MetricType;

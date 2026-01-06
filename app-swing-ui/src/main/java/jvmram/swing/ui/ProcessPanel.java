@@ -1,7 +1,7 @@
 package jvmram.swing.ui;
 
-import jvmram.controller.ProcessController;
-import jvmram.process.JvmProcessInfo;
+import jvmram.proto.ProcInfo;
+import jvmram.swing.client.JvmRamBackendClient;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,11 +13,10 @@ import static jvmram.swing.ui.Utils.*;
 
 public class ProcessPanel extends JPanel {
 
-    private final ProcessController processController = ProcessController.getInstance();
-
     private final JPanel contentWidget = new JPanel();
     private final JButton showButton;
     private final DefaultListModel<String> listModel = new DefaultListModel<>();
+    private final JvmRamBackendClient client;
 
     /**
      * Это костыль, сынок.
@@ -30,7 +29,8 @@ public class ProcessPanel extends JPanel {
     private final JList<String> processList;
     private final JCheckBox childrenCheck;
 
-    public ProcessPanel() {
+    public ProcessPanel(JvmRamBackendClient client) {
+        this.client = client;
         setLayout(new BorderLayout());
 
         // Контейнер для содержимого панели
@@ -59,7 +59,7 @@ public class ProcessPanel extends JPanel {
         processLayout.add(scrollPane);
 
         var refreshButton = new JButton("Обновить");
-        refreshButton.addActionListener(_ -> processController.refreshAvailableJvmProcesses());
+        refreshButton.addActionListener(_ -> client.refreshAvailableJvmProcesses());
         processLayout.add(refreshButton);
 
         processGroup.add(processLayout);
@@ -89,7 +89,7 @@ public class ProcessPanel extends JPanel {
         showButton.setVisible(false);
         add(showButton, BorderLayout.WEST);
 
-        processController.addAvailableJvmProcessesListener(this::handleAvailableJvmProcessesUpdate);
+        client.addAvailableJvmProcessesListener(this::handleAvailableJvmProcessesUpdate);
     }
 
     private void showPanel() {
@@ -106,12 +106,12 @@ public class ProcessPanel extends JPanel {
         repaint();
     }
 
-    private void handleAvailableJvmProcessesUpdate(Collection<JvmProcessInfo> jvmProcessInfos) {
+    private void handleAvailableJvmProcessesUpdate(Collection<ProcInfo> jvmProcessInfos) {
         SwingUtilities.invokeLater(() -> doHandleAvailableJvmProcessesUpdate(jvmProcessInfos));
     }
 
-    private void doHandleAvailableJvmProcessesUpdate(Collection<JvmProcessInfo> jvmProcessInfos) {
-        var toBeSelected = processController.getExplicitlyFollowingPids();
+    private void doHandleAvailableJvmProcessesUpdate(Collection<ProcInfo> jvmProcessInfos) {
+        var toBeSelected = client.getExplicitlyFollowingPids();
 
         // Очистка списка
         preventSelectionEventPropagation = true;
@@ -130,11 +130,11 @@ public class ProcessPanel extends JPanel {
                 .orElseThrow();
         List<Integer> selectedIndices = new ArrayList<>();
         for (var procInfo : jvmProcessInfos.stream().sorted().toList()) {
-            var formattedPid = ("%" + maxPidDigitCount + "d").formatted(procInfo.pid());
+            var formattedPid = ("%" + maxPidDigitCount + "d").formatted(procInfo.getPid());
             var p = formattedPid.replace(" ", " ");
-            var entry = "%s %s".formatted(p, procInfo.displayName());
+            var entry = "%s %s".formatted(p, procInfo.getDisplayName());
             listModel.addElement(entry);
-            if (toBeSelected.contains(procInfo.pid())) {
+            if (toBeSelected.contains(procInfo.getPid())) {
                 selectedIndices.add(i);
             }
             ++i;
@@ -142,8 +142,8 @@ public class ProcessPanel extends JPanel {
         processList.setSelectedIndices(toArray(selectedIndices));
     }
 
-    private static int pidDigitCount(JvmProcessInfo procInfo) {
-        return Long.valueOf(procInfo.pid()).toString().length();
+    private static int pidDigitCount(ProcInfo procInfo) {
+        return Long.valueOf(procInfo.getPid()).toString().length();
     }
 
     private void onProcessSelected() {
@@ -162,15 +162,15 @@ public class ProcessPanel extends JPanel {
             pids.add(pid);
         }
 
-        processController.setCurrentlySelectedPids(pids);
+        client.setCurrentlySelectedPids(pids);
     }
 
     private void onChildrenToggled() {
         boolean includeChildren = childrenCheck.isSelected();
         if (includeChildren) {
-            processController.includeChildrenProcesses();
+            client.includeChildrenProcesses();
         } else {
-            processController.excludeChildrenProcesses();
+            client.excludeChildrenProcesses();
         }
     }
 }

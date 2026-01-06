@@ -1,10 +1,9 @@
 package jvmram.swing.ui;
 
-import jvmram.controller.GraphController;
-import jvmram.controller.GraphRenderer;
-import jvmram.metrics.GraphPoint;
+import jvmram.model.graph.GraphPoint;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.Utils;
+import jvmram.swing.client.JvmRamBackendClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,7 @@ import java.util.List;
 
 import static jvmram.swing.ui.Utils.COLORS;
 
-public class GraphPanel extends JPanel implements GraphRenderer {
+public class GraphPanel extends JPanel {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -27,11 +26,8 @@ public class GraphPanel extends JPanel implements GraphRenderer {
     private static final int GRAPH_STROKE_WIDTH = 1;
     private static final Duration GRAPH_MIN_DURATION = Duration.ofMinutes(2);
 
-    private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
-
-    public GraphPanel() {
-        GraphController graphController = GraphController.getInstance();
-        graphController.addRenderer(this);
+    public GraphPanel(JvmRamBackendClient client) {
+        client.addGraphChangesListener(this::repaintAsync);
     }
 
     @Override
@@ -232,8 +228,9 @@ public class GraphPanel extends JPanel implements GraphRenderer {
         }
     }
 
-    @Override
-    public void repaintAsync() {
+    private volatile GraphPointQueues graphPointQueues;
+    public void repaintAsync(GraphPointQueues graphPointQueues) {
+        this.graphPointQueues = graphPointQueues;
         SwingUtilities.invokeLater(this::repaint);
     }
 }

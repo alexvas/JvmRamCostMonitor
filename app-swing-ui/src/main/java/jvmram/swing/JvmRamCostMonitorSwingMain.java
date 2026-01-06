@@ -1,6 +1,6 @@
 package jvmram.swing;
 
-import jvmram.controller.AppScheduler;
+import jvmram.swing.client.impl.JvmRamBackendClientImpl;
 import jvmram.swing.ui.MainWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,14 +8,13 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.lang.invoke.MethodHandles;
 
-public class Main {
+public class JvmRamCostMonitorSwingMain {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     public static void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
-        var appScheduler = AppScheduler.getInstance();
-        appScheduler.start();
+        var client = new JvmRamBackendClientImpl();
 
         SwingUtilities.invokeLater(() -> {
             try {
@@ -26,7 +25,7 @@ public class Main {
                     LOG.info("Failed to install system look 'n feel, using default one: {}", e.getMessage());
                 }
                 
-                var window = new MainWindow();
+                var window = new MainWindow(client);
                 window.setVisible(true);
             } catch (Exception e) {
                 LOG.error("Error starting the application", e);

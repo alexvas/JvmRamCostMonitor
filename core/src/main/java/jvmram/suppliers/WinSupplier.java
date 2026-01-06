@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 
-import static jvmram.metrics.RamMetric.Os.WINDOWS;
+import static jvmram.model.metrics.Os.WINDOWS;
 
 class WinSupplier extends AbstractDataSupplier<WinData> {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

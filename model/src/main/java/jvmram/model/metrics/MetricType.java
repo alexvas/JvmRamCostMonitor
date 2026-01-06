@@ -1,11 +1,9 @@
 package jvmram.model.metrics;
 
-import jvmram.metrics.RamMetric.Os;
-
 import java.util.EnumSet;
 
-import static jvmram.metrics.RamMetric.Os.LINUX;
-import static jvmram.metrics.RamMetric.Os.WINDOWS;
+import static jvmram.model.metrics.Os.LINUX;
+import static jvmram.model.metrics.Os.WINDOWS;
 
 public enum MetricType {
     RSS(EnumSet.of(LINUX), "Resident Set Size"),

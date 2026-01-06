@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    alias(libs.plugins.protobuf)
 }
 
 dependencies {
@@ -8,12 +9,26 @@ dependencies {
     runtimeOnly libs.slf4j.simple
     compileOnly libs.jspecify
 
-    implementation project(':core')
+    implementation libs.grpc.protobuf
+    implementation libs.grpc.services
+    runtimeOnly libs.grpc.netty.shaded
+    protobuf files('../proto')
+
+    implementation(project(':model'))
 }
 
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
+    plugins {
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}" }
+    }
+    generateProtoTasks {
+        all()*.plugins { grpc {} }
+    }
+}
 
 application {
-    mainClass = 'jvmram.swing.Main'
+    mainClass = 'jvmram.swing.JvmRamCostMonitorSwingMain'
 }
 
 distributions {
