@@ -1,0 +1,56 @@
+This product includes software developed by third-party authors
+and distributed under free and open source licenses.
+
+────────────────────────────────────────────────────────────
+Licensing
+────────────────────────────────────────────────────────────
+
+The source code of this application is licensed under the
+GNU General Public License, version 3 (GPL-3.0).
+
+This application makes use of third-party Java libraries
+distributed under the GNU General Public License, version 2,
+with applicable linking or assembly exceptions.
+
+────────────────────────────────────────────────────────────
+Copyright
+────────────────────────────────────────────────────────────
+
+Copyright (C) 2026 Aleksandr Vasilev
+
+Third-party libraries are copyrighted by their respective
+authors. See the corresponding source files or documentation
+for individual copyright notices.
+
+────────────────────────────────────────────────────────────
+Disclaimer of Warranty
+────────────────────────────────────────────────────────────
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License, version 3, for more details.
+
+────────────────────────────────────────────────────────────
+Availability of Source Code
+────────────────────────────────────────────────────────────
+
+The complete corresponding source code for this application,
+licensed under GPL-3.0, is available from the distributor of
+this software.
+
+The source code of third-party libraries licensed under
+GPL-2.0 with the Classpath Exception is available from their
+respective upstream projects.
+
+────────────────────────────────────────────────────────────
+License Texts
+────────────────────────────────────────────────────────────
+
+Copies of the following licenses are provided with this
+distribution:
+
+- GNU General Public License, version 3
+- GNU General Public License, version 2
+- OPENJDK ASSEMBLY EXCEPTION
