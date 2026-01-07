@@ -41,6 +41,7 @@ public class JvmRamClientImpl implements JvmRamClient {
 
         var stub = AppBackendGrpc.newStub(channel);
         stub.listenJvmProcessList(EMPTY, procObserver);
+        stub.listenGraphQueues(EMPTY, graphObserver);
     }
 
     @Override
