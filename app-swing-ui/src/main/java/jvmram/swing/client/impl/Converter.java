@@ -71,7 +71,7 @@ public class Converter {
         };
     }
 
-    public static GraphPoint fromGrpc(GraphQueue.GraphPoint input) {
+    public static GraphPoint fromGrpc(jvmram.proto.GraphPoint input) {
         return new GraphPoint(
                 fromGrpc(input.getMoment()),
                 input.getBytes()

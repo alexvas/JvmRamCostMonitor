@@ -134,7 +134,7 @@ class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
     public void setVisible(SetVisibleRequest request, StreamObserver<Empty> responseObserver) {
         fireEmptyResponse(responseObserver);
 
-        var type = Converter.fromGrpc(request.getType());
+        var type = Converter.fromGrpc(request.getMetricType());
         if (type != null) {
             metricVisibility.setVisible(type);
         } else {
@@ -146,7 +146,7 @@ class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
     public void setInvisible(SetInvisibleRequest request, StreamObserver<Empty> responseObserver) {
         fireEmptyResponse(responseObserver);
 
-        var type = Converter.fromGrpc(request.getType());
+        var type = Converter.fromGrpc(request.getMetricType());
         if (type != null) {
             metricVisibility.setInvisible(type);
         } else {

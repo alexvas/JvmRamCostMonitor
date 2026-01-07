@@ -63,14 +63,13 @@ enum MetricType {
   NMT_COMMITTED = 8;
 }
 
+message GraphPoint {
+  google.protobuf.Timestamp moment = 1;
+  int64 bytes = 2;
+}
+
 message GraphQueue {
-  MetricType type = 1;
-
-  message GraphPoint {
-    google.protobuf.Timestamp moment = 1;
-    int64 bytes = 2;
-  }
-
+  MetricType metric_type = 1;
   repeated GraphPoint points = 2;
 }
 
@@ -84,11 +83,11 @@ message ApplicableMetricsResponse {
 }
 
 message SetVisibleRequest {
-  MetricType type = 1;
+  MetricType metric_type = 1;
 }
 
 message SetInvisibleRequest {
-  MetricType type = 1;
+  MetricType metric_type = 1;
 }
 
 message ChildrenProcessIncludedResponse {

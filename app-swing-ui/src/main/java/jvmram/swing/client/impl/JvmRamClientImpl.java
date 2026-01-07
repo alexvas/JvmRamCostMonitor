@@ -71,14 +71,14 @@ public class JvmRamClientImpl implements JvmRamClient {
     @Override
     public void setVisible(MetricType input) {
         var output = convert2Grpc(input);
-        var request = SetVisibleRequest.newBuilder().setType(output).build();
+        var request = SetVisibleRequest.newBuilder().setMetricType(output).build();
         exec(stub -> stub.setVisible(request));
     }
 
     @Override
     public void setInvisible(MetricType input) {
         var output = convert2Grpc(input);
-        var request = SetInvisibleRequest.newBuilder().setType(output).build();
+        var request = SetInvisibleRequest.newBuilder().setMetricType(output).build();
         exec(stub -> stub.setInvisible(request));
     }
 
@@ -142,7 +142,7 @@ public class JvmRamClientImpl implements JvmRamClient {
         long pid = input.getPid();
         input.getQueuesList().forEach(queue ->
         {
-            var mt = fromGrpc(queue.getType());
+            var mt = fromGrpc(queue.getMetricType());
             var points = queue.getPointsList().stream().map(Converter::fromGrpc).toList();
             graphStore.put(pid, mt, points);
         });

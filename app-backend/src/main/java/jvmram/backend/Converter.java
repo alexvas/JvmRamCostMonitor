@@ -22,7 +22,7 @@ class Converter {
 
     static GraphQueue convert2Grpc(GraphKey k, Collection<GraphPoint> points) {
         return GraphQueue.newBuilder()
-                .setType(convert2Grpc(k.type()))
+                .setMetricType(convert2Grpc(k.type()))
                 .addAllPoints(
                         points.stream()
                                 .map(Converter::convert2Grpc)
@@ -31,9 +31,9 @@ class Converter {
                 .build();
     }
 
-    static GraphQueue.GraphPoint convert2Grpc(GraphPoint input) {
+    static jvmram.proto.GraphPoint convert2Grpc(GraphPoint input) {
         var moment = input.moment();
-        return GraphQueue.GraphPoint.newBuilder()
+        return jvmram.proto.GraphPoint.newBuilder()
                 .setBytes(input.bytes())
                 .setMoment(
                         Timestamp.newBuilder()
