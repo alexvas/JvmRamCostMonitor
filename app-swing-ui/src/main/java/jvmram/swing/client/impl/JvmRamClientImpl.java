@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 import com.google.protobuf.Empty;
 import io.grpc.Channel;
 import io.grpc.StatusRuntimeException;
-import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.metrics.MetricType;
 import jvmram.proto.*;
 import jvmram.proto.AppBackendGrpc.AppBackendBlockingStub;

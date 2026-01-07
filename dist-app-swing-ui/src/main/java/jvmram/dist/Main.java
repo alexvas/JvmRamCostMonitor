@@ -15,10 +15,12 @@ public class Main {
     void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
+        var backend = new JvmRunCostMonitor();
+        backend.setup(DEFAULT_PORT);
+
         @SuppressWarnings("resource")
         var swing = new SwingLifecycle();
         swing.setup(DEFAULT_PORT);
-        var backend = new JvmRunCostMonitor();
-        backend.setup(DEFAULT_PORT);
+        Runtime.getRuntime().addShutdownHook(new Thread(swing::close));
     }
 }

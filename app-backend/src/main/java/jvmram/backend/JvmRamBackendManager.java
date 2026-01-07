@@ -57,7 +57,7 @@ class JvmRamBackendManager {
         System.err.println("*** shutting down gRPC server since JVM is shutting down");
         try {
             if (server != null) {
-                server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+                server.shutdown().awaitTermination(3, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
             if (server != null) {
