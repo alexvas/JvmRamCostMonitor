@@ -44,4 +44,6 @@ public interface ProcessController {
     static ProcessController getInstance() {
         return ProcessControllerImpl.INSTANCE;
     }
+
+    boolean areChildrenProcessesIncluded();
 }

@@ -1,6 +1,7 @@
 module jvmram.backend {
     requires org.slf4j;
-    
+    requires org.jspecify;
+
     requires com.google.protobuf;
     requires com.google.common;
     requires io.grpc;

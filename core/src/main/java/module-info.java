@@ -11,4 +11,5 @@ module jvmram.core {
     exports jvmram.metrics;
     exports jvmram.controller;
     exports jvmram.process;
+    exports jvmram.visibility;
 }

@@ -25,11 +25,13 @@ public interface JvmRamClient {
 
     List<Long> getExplicitlyFollowingPids();
 
-    void setCurrentlySelectedPids(Collection<Long> pids);
+    void setFollowingPids(Collection<Long> pids);
+
+    boolean areChildrenProcessesIncluded();
 
     void includeChildrenProcesses();
 
     void excludeChildrenProcesses();
 
-    void addGraphChangesListener(Consumer<GraphPointQueues> listener);
+    void addGraphChangesListener(Consumer<GraphPointQueuesMiniMax> listener);
 }

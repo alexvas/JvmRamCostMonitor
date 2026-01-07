@@ -9,6 +9,9 @@ module jvmram.app.swing.ui {
     requires io.grpc;
 
     requires jvmram.model;
+    requires java.logging;
+    requires org.jspecify;
+    requires io.grpc.stub;
 
     exports jvmram.swing;
 }

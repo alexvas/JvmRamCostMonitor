@@ -1,44 +1,53 @@
 package jvmram.backend;
 
 import com.google.protobuf.Empty;
-import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
+import jvmram.conf.Config;
 import jvmram.controller.GraphController;
 import jvmram.controller.JmxService;
 import jvmram.controller.ProcessController;
-import jvmram.model.graph.GraphPoint;
-import jvmram.model.graph.GraphKey;
 import jvmram.model.graph.GraphPointQueues;
-import jvmram.process.JvmProcessInfo;
+import jvmram.model.metrics.MetricType;
 import jvmram.proto.*;
+import jvmram.visibility.MetricVisibility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
+import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
+
+import static jvmram.backend.Converter.convert2Grpc;
 
 class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
+    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private static final Empty EMPTY = Empty.newBuilder().build();
 
     private final ProcessController processController;
     private final GraphController graphController;
     private final GraphPointQueues queues;
     private final JmxService jmxService;
+    private final MetricVisibility metricVisibility;
 
     public JvmRamBackendImpl(
             ProcessController processController,
             GraphController graphController,
             GraphPointQueues queues,
-            JmxService jmxService
+            JmxService jmxService,
+            MetricVisibility metricVisibility
     ) {
         this.processController = processController;
         this.graphController = graphController;
         this.queues = queues;
         this.jmxService = jmxService;
+        this.metricVisibility = metricVisibility;
     }
 
     @Override
     public void listenJvmProcessList(Empty request, StreamObserver<JvmProcessListResponse> responseObserver) {
         processController.addAvailableJvmProcessesListener(procInfos -> {
                     var resp = JvmProcessListResponse.newBuilder()
-                            .addAllInfos(procInfos.stream().map(this::convert2Grpc).toList())
+                            .addAllInfos(procInfos.stream().map(Converter::convert2Grpc).toList())
                             .build();
                     responseObserver.onNext(resp);
                 }
@@ -49,7 +58,7 @@ class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
     public void listenGraphQueues(Empty request, StreamObserver<GraphQueues> responseObserver) {
         graphController.addRenderer(() -> {
             var keys = queues.keys();
-            GraphQueues resp = GraphQueues.newBuilder().addAllQueues(
+            var resp = GraphQueues.newBuilder().addAllQueues(
                     keys.stream()
                             .map(k -> convert2Grpc(k, queues.getPoints(k)))
                             .toList()
@@ -59,77 +68,101 @@ class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
     }
 
     @Override
-    public void setFollowingPids(JvmFollowPidRequest request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onNext(EMPTY);
-        responseObserver.onCompleted();
+    public void setFollowingPids(PidList request, StreamObserver<Empty> responseObserver) {
+        fireEmptyResponse(responseObserver);
 
         processController.setCurrentlySelectedPids(
-                request.getPidsList().stream().map(this::convertFromGrpc).toList()
+                request.getPidsList().stream().map(Converter::fromGrpc).toList()
         );
     }
 
     @Override
     public void triggerGc(Pid request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onNext(EMPTY);
-        responseObserver.onCompleted();
+        fireEmptyResponse(responseObserver);
 
         jmxService.gc(request.getPid());
     }
 
     @Override
     public void dumpHeap(File request, StreamObserver<Empty> responseObserver) {
-        responseObserver.onNext(EMPTY);
-        responseObserver.onCompleted();
+        fireEmptyResponse(responseObserver);
 
         jmxService.createHeapDump(request.getFileName());
     }
 
-    private ProcInfo convert2Grpc(JvmProcessInfo input) {
-        return ProcInfo.newBuilder()
-                .setPid(input.pid())
-                .setDisplayName(input.displayName())
-                .build();
+    @Override
+    public void getExplicitlyFollowingPids(Empty request, StreamObserver<PidList> responseObserver) {
+        var pids = processController.getExplicitlyFollowingPids();
+        var response = convert2Grpc(pids);
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
-    private GraphQueue convert2Grpc(GraphKey k, Collection<GraphPoint> points) {
-        return GraphQueue.newBuilder()
-                .setType(convert2Grpc(k))
-                .addAllPoints(
-                        points.stream()
-                                .map(this::convert2Grpc)
-                                .toList()
-                )
-                .build();
+    @Override
+    public void areChildrenProcessesIncluded(Empty request, StreamObserver<ChildrenProcessIncludedResponse> responseObserver) {
+        boolean areIncluded = processController.areChildrenProcessesIncluded();
+        var response = ChildrenProcessIncludedResponse.newBuilder().setAreIncluded(areIncluded).build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
-    private GraphQueue.MetricType convert2Grpc(GraphKey input) {
-        return switch (input.type()) {
-            case RSS -> GraphQueue.MetricType.RSS;
-            case PSS -> GraphQueue.MetricType.PSS;
-            case USS -> GraphQueue.MetricType.USS;
-            case WS -> GraphQueue.MetricType.WS;
-            case PB -> GraphQueue.MetricType.PB;
-            case HEAP_USED -> GraphQueue.MetricType.HEAP_USED;
-            case HEAP_COMMITTED -> GraphQueue.MetricType.HEAP_COMMITTED;
-            case NMT_USED -> GraphQueue.MetricType.NMT_USED;
-            case NMT_COMMITTED -> GraphQueue.MetricType.NMT_COMMITTED;
-        };
+    @Override
+    public void includeChildrenProcesses(Empty request, StreamObserver<Empty> responseObserver) {
+        fireEmptyResponse(responseObserver);
+        processController.includeChildrenProcesses();
     }
 
-    private GraphQueue.GraphPoint convert2Grpc(GraphPoint input) {
-        var moment = input.moment();
-        return GraphQueue.GraphPoint.newBuilder()
-                .setBytes(input.bytes())
-                .setMoment(
-                        Timestamp.newBuilder()
-                                .setSeconds(moment.getEpochSecond())
-                                .setNanos(moment.getNano())
-                                .build()
-                )
-                .build();
+    @Override
+    public void excludeChildrenProcesses(Empty request, StreamObserver<Empty> responseObserver) {
+        fireEmptyResponse(responseObserver);
+        processController.excludeChildrenProcesses();
     }
 
-    private Long convertFromGrpc(Pid pid) {
-        return pid.getPid();
+    @Override
+    public void getApplicableMetrics(Empty request, StreamObserver<ApplicableMetricsResponse> responseObserver) {
+        var metrics = Arrays.stream(MetricType.values())
+                .filter(it -> it.isApplicable(Config.os))
+                .map(Converter::convert2Grpc)
+                .toList();
+        var response = ApplicableMetricsResponse.newBuilder().addAllTypes(metrics).build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void setVisible(SetVisibleRequest request, StreamObserver<Empty> responseObserver) {
+        fireEmptyResponse(responseObserver);
+
+        var type = Converter.fromGrpc(request.getType());
+        if (type != null) {
+            metricVisibility.setVisible(type);
+        } else {
+            LOG.warn("Failed to convert input type of setVisible {}", request);
+        }
+    }
+
+    @Override
+    public void setInvisible(SetInvisibleRequest request, StreamObserver<Empty> responseObserver) {
+        fireEmptyResponse(responseObserver);
+
+        var type = Converter.fromGrpc(request.getType());
+        if (type != null) {
+            metricVisibility.setInvisible(type);
+        } else {
+            LOG.warn("Failed to convert input type of setInvisible {}", request);
+        }
+    }
+
+    @Override
+    public void refreshAvailableJvmProcesses(Empty request, StreamObserver<Empty> responseObserver) {
+        fireEmptyResponse(responseObserver);
+
+        processController.refreshAvailableJvmProcesses();
+    }
+
+    private static void fireEmptyResponse(StreamObserver<Empty> responseObserver) {
+        responseObserver.onNext(EMPTY);
+        responseObserver.onCompleted();
     }
 }

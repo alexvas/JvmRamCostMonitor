@@ -1,16 +1,21 @@
 package jvmram.swing.ui;
 
 import jvmram.model.metrics.MetricType;
+import jvmram.proto.ProcInfo;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Utils {
+
     private Utils() {}
+
+    public static final Comparator<? super ProcInfo> PROC_INFO_COMPARATOR = (Comparator<ProcInfo>) (left, right) -> Long.compare(left.getPid(), right.getPid());
 
     static final Map<MetricType, Color> COLORS = new EnumMap<>(MetricType.class);
 

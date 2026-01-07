@@ -1,6 +1,7 @@
 package jvmram.controller.impl;
 
 import jvmram.controller.ProcessController;
+import jvmram.model.util.RwGuarded;
 import jvmram.process.JvmProcessInfo;
 import jvmram.process.ProcessManager;
 
@@ -21,6 +22,11 @@ public class ProcessControllerImpl implements ProcessController {
     private final ProcessManager processManager = ProcessManager.getInstance();
 
     private final List<Consumer<Collection<JvmProcessInfo>>> onProcessInfoChangedListeners = new ArrayList<>();
+
+    @Override
+    public boolean areChildrenProcessesIncluded() {
+        return guarded.read(() -> includeChildrenProcesses);
+    }
 
     @Override
     public void includeChildrenProcesses() {

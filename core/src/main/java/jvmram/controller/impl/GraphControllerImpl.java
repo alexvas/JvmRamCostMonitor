@@ -8,6 +8,7 @@ import jvmram.controller.ProcessController;
 import jvmram.model.graph.GraphPoint;
 import jvmram.metrics.MetricsFactory;
 import jvmram.model.graph.GraphPointQueues;
+import jvmram.model.graph.GraphPointQueuesWritable;
 import jvmram.visibility.MetricVisibility;
 import jvmram.model.metrics.MetricType;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ public class GraphControllerImpl implements GraphController {
     private final MetricVisibility metricVisibility = MetricVisibility.getInstance();
     private final MetricsFactory metricsFactory = MetricsFactory.getInstance();
     private final ProcessController processController = ProcessController.getInstance();
-    private final GraphPointQueues graphPointQueues = GraphPointQueues.getInstance();
+    private final GraphPointQueuesWritable graphPointQueues = GraphPointQueuesWritable.getInstance();
 
     private final List<GraphRenderer> renderers = synchronizedList(new ArrayList<>());
 

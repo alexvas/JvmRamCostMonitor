@@ -129,7 +129,7 @@ public class ProcessPanel extends JPanel {
                 .max(Integer::compare)
                 .orElseThrow();
         List<Integer> selectedIndices = new ArrayList<>();
-        for (var procInfo : jvmProcessInfos.stream().sorted().toList()) {
+        for (var procInfo : jvmProcessInfos.stream().sorted(PROC_INFO_COMPARATOR).toList()) {
             var formattedPid = ("%" + maxPidDigitCount + "d").formatted(procInfo.getPid());
             var p = formattedPid.replace(" ", " ");
             var entry = "%s %s".formatted(p, procInfo.getDisplayName());
@@ -162,7 +162,7 @@ public class ProcessPanel extends JPanel {
             pids.add(pid);
         }
 
-        client.setCurrentlySelectedPids(pids);
+        client.setFollowingPids(pids);
     }
 
     private void onChildrenToggled() {

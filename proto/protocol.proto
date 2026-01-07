@@ -10,8 +10,18 @@ import "google/protobuf/empty.proto";
 package jvmram;
 
 service AppBackend {
-  rpc SetFollowingPids (JvmFollowPidRequest) returns (google.protobuf.Empty);
+  rpc GetExplicitlyFollowingPids (google.protobuf.Empty) returns (PidList);
+  rpc SetFollowingPids (PidList) returns (google.protobuf.Empty);
+  rpc AreChildrenProcessesIncluded (google.protobuf.Empty) returns (ChildrenProcessIncludedResponse);
+  rpc IncludeChildrenProcesses (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc ExcludeChildrenProcesses (google.protobuf.Empty) returns (google.protobuf.Empty);
 
+  rpc GetApplicableMetrics (google.protobuf.Empty) returns (ApplicableMetricsResponse);
+
+  rpc SetVisible (SetVisibleRequest) returns (google.protobuf.Empty);
+  rpc SetInvisible (SetInvisibleRequest) returns (google.protobuf.Empty);
+
+  rpc RefreshAvailableJvmProcesses (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc ListenJvmProcessList (google.protobuf.Empty) returns (stream JvmProcessListResponse);
   rpc ListenGraphQueues (google.protobuf.Empty) returns (stream GraphQueues);
 
@@ -28,7 +38,7 @@ message ProcInfo {
   string display_name = 2;
 }
 
-message JvmFollowPidRequest {
+message PidList {
   repeated Pid pids = 1;
 }
 
@@ -41,22 +51,19 @@ message File {
   string file_name = 2;
 }
 
+enum MetricType {
+  RSS = 0;
+  PSS = 1;
+  USS = 2;
+  WS = 3;
+  PB = 4;
+  HEAP_USED = 5;
+  HEAP_COMMITTED = 6;
+  NMT_USED = 7;
+  NMT_COMMITTED = 8;
+}
+
 message GraphQueue {
-
-  enum MetricType {
-    UNKNOWN = 0;
-
-    RSS = 1;
-    PSS = 2;
-    USS = 3;
-    WS = 4;
-    PB = 5;
-    HEAP_USED = 6;
-    HEAP_COMMITTED = 7;
-    NMT_USED = 8;
-    NMT_COMMITTED = 9;
-  }
-
   MetricType type = 1;
 
   message GraphPoint {
@@ -70,4 +77,20 @@ message GraphQueue {
 message GraphQueues {
   int64 pid = 1;
   repeated GraphQueue queues = 2;
+}
+
+message ApplicableMetricsResponse {
+  repeated MetricType types = 1;
+}
+
+message SetVisibleRequest {
+  MetricType type = 1;
+}
+
+message SetInvisibleRequest {
+  MetricType type = 1;
+}
+
+message ChildrenProcessIncludedResponse {
+  bool areIncluded = 1;
 }

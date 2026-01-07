@@ -1,8 +1,8 @@
 package jvmram.swing.ui;
 
 import jvmram.model.graph.GraphPoint;
-import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.graph.Utils;
+import jvmram.swing.client.GraphPointQueuesMiniMax;
 import jvmram.swing.client.JvmRamClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +44,7 @@ public class GraphPanel extends JPanel {
         g2.setColor(Color.WHITE);
         g2.fillRect(0, 0, width, height);
 
-        if (graphPointQueues.isEmpty()) {
+        if (graphPointQueues == null || graphPointQueues.isEmpty()) {
             drawEmptyGraph(g2, width, height);
             return;
         }
@@ -228,8 +228,8 @@ public class GraphPanel extends JPanel {
         }
     }
 
-    private volatile GraphPointQueues graphPointQueues;
-    public void repaintAsync(GraphPointQueues graphPointQueues) {
+    private volatile GraphPointQueuesMiniMax graphPointQueues;
+    public void repaintAsync(GraphPointQueuesMiniMax graphPointQueues) {
         this.graphPointQueues = graphPointQueues;
         SwingUtilities.invokeLater(this::repaint);
     }
