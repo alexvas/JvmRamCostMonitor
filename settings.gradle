@@ -1,4 +1,4 @@
-rootProject.name = 'JvmRamCostMonitor'
+rootProject.name = 'JvmRamCost'
 include('model', 'core', 'app-backend', 'app-swing-ui', 'dist-app-swing-ui', 'proto')
 
 // назначаем сборочным скриптам понятные имена:

@@ -11,13 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 
-public class JvmRunCostMonitor {
+public class JvmRunCost {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     static void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
-        var main = new JvmRunCostMonitor();
+        var main = new JvmRunCost();
         main.setup(53333);
         main.blockUntilShutdown();
     }

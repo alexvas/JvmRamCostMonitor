@@ -86,13 +86,13 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           cd build/distributions
-          if [ -f JvmRamCostMonitor.zip ]; then
-            mv JvmRamCostMonitor.zip "JvmRamCostMonitor-${VERSION}.zip"
-            echo "Renamed JvmRamCostMonitor.zip to JvmRamCostMonitor-${VERSION}.zip"
+          if [ -f JvmRamCost.zip ]; then
+            mv JvmRamCost.zip "JvmRamCost-${VERSION}.zip"
+            echo "Renamed JvmRamCost.zip to JvmRamCost-${VERSION}.zip"
           fi
-          if [ -f JvmRamCostMonitor.tar ]; then
-            mv JvmRamCostMonitor.tar "JvmRamCostMonitor-${VERSION}.tar"
-            echo "Renamed JvmRamCostMonitor.tar to JvmRamCostMonitor-${VERSION}.tar"
+          if [ -f JvmRamCost.tar ]; then
+            mv JvmRamCost.tar "JvmRamCost-${VERSION}.tar"
+            echo "Renamed JvmRamCost.tar to JvmRamCost-${VERSION}.tar"
           fi
       
       - name: Check files and prepare release
@@ -100,7 +100,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           FILES=""
-          for file in "build/distributions/JvmRamCostMonitor-${VERSION}.zip" "build/distributions/JvmRamCostMonitor-${VERSION}.tar"; do
+          for file in "build/distributions/JvmRamCost-${VERSION}.zip" "build/distributions/JvmRamCost-${VERSION}.tar"; do
             if [ -f "$file" ]; then
               FILES="${FILES}${file}"$'\n'
             fi
@@ -116,17 +116,17 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: Release ${{ steps.version.outputs.version }}
           body: |
-            ## JvmRamCostMonitor ${{ steps.version.outputs.version }}  
+            ## JvmRamCost ${{ steps.version.outputs.version }}  
             ### Установка  
             **Debian/Ubuntu:**
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor-${{ steps.version.outputs.version }}.tar
-            sudo tar xf JvmRamCostMonitor-${{ steps.version.outputs.version }}.tar
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCost-${{ steps.version.outputs.version }}.tar
+            sudo tar xf JvmRamCost-${{ steps.version.outputs.version }}.tar
             ```  
             **Windows:**
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCostMonitor-${{ steps.version.outputs.version }}.zip
-            unzip JvmRamCostMonitor-${{ steps.version.outputs.version }}.zip
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCost-${{ steps.version.outputs.version }}.zip
+            unzip JvmRamCost-${{ steps.version.outputs.version }}.zip
             ```
           files: ${{ steps.check_files.outputs.files }}
           draft: false

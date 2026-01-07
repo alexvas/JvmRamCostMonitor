@@ -1,6 +1,6 @@
 package jvmram.dist;
 
-import jvmram.backend.JvmRunCostMonitor;
+import jvmram.backend.JvmRunCost;
 import jvmram.swing.SwingLifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ public class Main {
     void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
-        var backend = new JvmRunCostMonitor();
+        var backend = new JvmRunCost();
         backend.setup(DEFAULT_PORT);
 
         @SuppressWarnings("resource")
