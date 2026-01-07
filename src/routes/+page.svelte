@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { MetricType, SetVisibleRequest } from "../generated/protocol";
 
   let name = $state("");
   let greetMsg = $state("");
@@ -9,6 +10,13 @@
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     greetMsg = await invoke("greet", { name });
   }
+
+  async function setVisible(metricType: MetricType) {
+    const request = SetVisibleRequest.create({ metricType });
+    const response = await invoke("setVisible", { request });
+    console.log(response);
+  }
+
 </script>
 
 <main class="container">

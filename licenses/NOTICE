@@ -12,6 +12,9 @@ This application makes use of third-party Java libraries
 distributed under the GNU General Public License, version 2,
 with applicable linking or assembly exceptions.
 
+This application includes third-party components
+licensed under the Apache License, Version 2.0.
+
 ────────────────────────────────────────────────────────────
 Copyright
 ────────────────────────────────────────────────────────────
