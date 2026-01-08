@@ -2,7 +2,7 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 use tonic::transport::Channel;
 use Jmvram::app_backend_client::AppBackendClient;
-use tauri::State;
+use tauri::{State, http::Uri};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -42,17 +42,15 @@ impl serde::Serialize for Error {
     }
 }
 
-const GRPC_SERVER_ADDRESS: &str = "localhost:53333";
+const LOCALHOST_V4: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+const GRPC_SERVER_PORT: u16 = 53333;
+
+use std::net::{IpAddr, Ipv4Addr};
 
 async fn create_grpc_client() -> AppBackendClient<Channel> {
-    let channel = Channel::from_static(&GRPC_SERVER_ADDRESS)
-        .connect()
-        .await
-        .expect(&format!(
-            "Can't create gRPC channel for a port {}",
-            GRPC_SERVER_ADDRESS
-        ));
-
+    let uri = format!("http://{}:{}", LOCALHOST_V4, GRPC_SERVER_PORT).parse::<Uri>().unwrap();
+    let endpoint = tonic::transport::Endpoint::from(uri);
+    let channel = endpoint.connect().await.expect("Can't create gRPC channel");
     AppBackendClient::new(channel)
 }
 
@@ -92,6 +90,7 @@ pub mod jvmram {
 }
 
 // Реэкспорт для удобства использования с правильным именем
+#[allow(non_snake_case)]
 pub mod Jmvram {
     pub use crate::jvmram::*;
 }
@@ -126,7 +125,7 @@ async fn set_invisible(state: State<'_, Arc<Mutex<AppState>>>, request: Jmvram::
     Ok(())
 }
 
-use tauri::{Builder, Window, WindowEvent, Manager};
+use tauri::{Builder, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
