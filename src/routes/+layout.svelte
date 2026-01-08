@@ -6,7 +6,7 @@
 
   let { children } = $props();
   let followingPids = $state<bigint[]>([]);
-  let availableJvmProcesses = $state<ProcInfo[]>([]);
+  let availableJvmProcesses = $state<Map<bigint, ProcInfo>>(new Map());
 
   setContext('followingPids', () => followingPids);
   setContext('availableJvmProcesses', () => availableJvmProcesses);
@@ -14,7 +14,12 @@
   import { listen } from '@tauri-apps/api/event';
 
   listen<{payload: ProcInfo[]}>('available-jvm-processes-updated', (event) => {
-    availableJvmProcesses = event.payload;
+    const sortedProcesses = [...event.payload].sort((a, b) => {
+      if (a.pid < b.pid) return -1;
+      if (a.pid > b.pid) return 1;
+      return 0;
+    });
+    availableJvmProcesses = new Map(sortedProcesses.map(proc => [proc.pid, proc]));
   });
 
   function isActive(href: string): boolean {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   
-  const getAvailableJvmProcesses = getContext<() => ProcInfo[]>('availableJvmProcesses')!;
+  const getAvailableJvmProcesses = getContext<() => Map<bigint, ProcInfo>>('availableJvmProcesses')!;
   let availableJvmProcesses = $derived(getAvailableJvmProcesses());
   const getFollowingPids = getContext<() => bigint[]>('followingPids')!;
   let followingPids = $derived(getFollowingPids());
@@ -24,17 +24,17 @@
 <div class="column card">
     <h3 class="card-title">Processes</h3>
     <div class="process-list">
-      {#each availableJvmProcesses as process}
-        <label class="process-item" class:selected={followingPids.includes(process.pid)}>
+      {#each Array.from(availableJvmProcesses.entries()) as [pid, process]}
+        <label class="process-item" class:selected={followingPids.includes(pid)}>
           <input 
             type="checkbox"
-            checked={followingPids.includes(process.pid)}
+            checked={followingPids.includes(pid)}
             onchange={(e) => {
               const pids = getFollowingPids();
               if (e.currentTarget.checked) {
-                pids.push(process.pid);
+                pids.push(pid);
               } else {
-                const index = pids.indexOf(process.pid);
+                const index = pids.indexOf(pid);
                 if (index > -1) {
                   pids.splice(index, 1);
                 }
@@ -42,7 +42,7 @@
             }}
             class="process-checkbox"
           />
-          <span class="process-text">{process.pid} - {process.display_name}</span>
+          <span class="process-text">{pid} - {process.display_name}</span>
         </label>
       {/each}
     </div>
