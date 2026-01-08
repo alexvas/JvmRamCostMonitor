@@ -15,11 +15,16 @@
 
   listen<{payload: ProcInfo[]}>('available-jvm-processes-updated', (event) => {
     const sortedProcesses = [...event.payload].sort((a, b) => {
-      if (a.pid < b.pid) return -1;
-      if (a.pid > b.pid) return 1;
+      const pidA = typeof a.pid === 'bigint' ? a.pid : BigInt(a.pid);
+      const pidB = typeof b.pid === 'bigint' ? b.pid : BigInt(b.pid);
+      if (pidA < pidB) return -1;
+      if (pidA > pidB) return 1;
       return 0;
     });
-    availableJvmProcesses = new Map(sortedProcesses.map(proc => [proc.pid, proc]));
+    availableJvmProcesses = new Map(sortedProcesses.map(proc => {
+      const pid = typeof proc.pid === 'bigint' ? proc.pid : BigInt(proc.pid);
+      return [pid, proc];
+    }));
   });
 
   function isActive(href: string): boolean {

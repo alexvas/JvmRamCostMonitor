@@ -10,7 +10,9 @@
   import { PidList, Pid, ProcInfo } from '$lib/generated/proto/protocol';
 
   async function followPids(pids: bigint[]) {
-    const request = PidList.create({ pids: pids.map(pid => Pid.create({ pid: pid })) });
+    const request = {
+      pids: pids.map(pid => ({ pid: Number(pid) }))
+    };
     const response = await invoke("set_following_pids", { request });
   }
 
