@@ -1,8 +1,8 @@
-use tokio::sync::OnceCell;
 use std::sync::Arc;
+use tauri::{http::Uri, State};
+use tokio::sync::OnceCell;
 use tonic::transport::Channel;
 use Jmvram::app_backend_client::AppBackendClient;
-use tauri::{State, http::Uri};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -62,15 +62,16 @@ struct AppState {
 
 impl AppState {
     fn new() -> Self {
-        Self { 
-            client: OnceCell::new() 
+        Self {
+            client: OnceCell::new(),
         }
     }
 
     async fn get_client(&self) -> AppBackendClient<Channel> {
-        self.client.get_or_init(|| async {
-            create_grpc_client()
-        }).await.clone()
+        self.client
+            .get_or_init(|| async { create_grpc_client() })
+            .await
+            .clone()
     }
 }
 
@@ -97,47 +98,68 @@ async fn get_client(state: &State<'_, Arc<AppState>>) -> AppBackendClient<Channe
     state.get_client().await
 }
 
+use Jmvram::ApplicableMetricsResponse;
+
 #[tauri::command]
-async fn set_visible(state: State<'_, Arc<AppState>>, request: Jmvram::SetVisibleRequest) -> Result<(), Error> {
+async fn get_applicable_metrics(state: State<'_, Arc<AppState>>) -> Result<ApplicableMetricsResponse, Error> {
+    let mut client = get_client(&state).await;
+    let response = client.get_applicable_metrics(Empty::default()).await?;
+    Ok(response.into_inner())
+}
+
+#[tauri::command]
+async fn set_visible(
+    state: State<'_, Arc<AppState>>,
+    request: Jmvram::SetVisibleRequest,
+) -> Result<(), Error> {
     let mut client = get_client(&state).await;
     client.set_visible(request).await?;
     Ok(())
 }
 
 #[tauri::command]
-async fn set_invisible(state: State<'_, Arc<AppState>>, request: Jmvram::SetInvisibleRequest) -> Result<(), Error> {
+async fn set_invisible(
+    state: State<'_, Arc<AppState>>,
+    request: Jmvram::SetInvisibleRequest,
+) -> Result<(), Error> {
     let mut client = get_client(&state).await;
     client.set_invisible(request).await?;
     Ok(())
 }
 
 #[tauri::command]
-async fn set_following_pids(state: State<'_, Arc<AppState>>, request: Jmvram::PidList) -> Result<(), Error> {
+async fn set_following_pids(
+    state: State<'_, Arc<AppState>>,
+    request: Jmvram::PidList,
+) -> Result<(), Error> {
     let mut client = get_client(&state).await;
     client.set_following_pids(request).await?;
     Ok(())
 }
 
-
 use tauri::{AppHandle, Emitter};
 
 #[tauri::command]
 fn available_jvm_processes_updated(app: AppHandle, proc_infos: Vec<Jmvram::ProcInfo>) {
-  app.emit("available-jvm-processes-updated", &proc_infos).unwrap();
+    app.emit("available-jvm-processes-updated", &proc_infos)
+        .unwrap();
 }
 
 use crate::google::protobuf::Empty;
 
-async fn listen_available_jvm_processes_updated(app: AppHandle, state: Arc<AppState>) -> Result<(), Error> {
+async fn listen_available_jvm_processes_updated(
+    app: AppHandle,
+    state: Arc<AppState>,
+) -> Result<(), Error> {
     let mut client: AppBackendClient<Channel> = state.get_client().await;
     let response = client.listen_jvm_process_list(Empty::default()).await?;
     let mut stream = response.into_inner();
-    
+
     while let Some(response) = stream.message().await? {
         // println!("listen_jvm_process_list message: {:?}", response);
         available_jvm_processes_updated(app.clone(), response.infos);
     }
-    
+
     Ok(())
 }
 
@@ -149,18 +171,23 @@ pub fn run() {
         .setup(|app| {
             let state = Arc::new(AppState::new());
             app.manage(state.clone());
-            
+
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = listen_available_jvm_processes_updated(app_handle, state).await {
                     eprintln!("Error in listen_available_jvm_processes_updated: {}", e);
                 }
             });
-            
+
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![set_visible, set_invisible, set_following_pids])
+        .invoke_handler(tauri::generate_handler![
+            get_applicable_metrics,
+            set_visible,
+            set_invisible,
+            set_following_pids,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

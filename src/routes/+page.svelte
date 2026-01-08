@@ -1,6 +1,14 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { MetricType, SetVisibleRequest, SetInvisibleRequest, Pid, PidList, ProcInfo } from "../generated/proto/protocol";
+  import { 
+    MetricType, 
+    SetVisibleRequest, 
+    SetInvisibleRequest, 
+    Pid,
+    PidList, 
+    ProcInfo, 
+    ApplicableMetricsResponse,
+  } from "../generated/proto/protocol";
 
   function watch<T>(getter: () => T, callback: (newVal: T, oldVal: T | undefined) => void) {
     let oldVal: T | undefined = undefined;
@@ -11,12 +19,21 @@
     });
   }
 
-  const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number' && v >= 0);
-  let visibleMetrics = $state<MetricType[]>(allMetricTypes);
+  async function getApplicableMetrics() {
+    const response = await invoke<ApplicableMetricsResponse>("get_applicable_metrics");
+    console.log('get applicable metrics response', response);
+    return response.types;
+  }
+
+  let allMetricTypes = $state<MetricType[]>();
+  getApplicableMetrics().then(types => {
+    allMetricTypes = types;
+  });
+  
+  let visibleMetrics = $derived(allMetricTypes);
  
   async function setVisible(mt: MetricType) {
     const request = SetVisibleRequest.create({ metric_type: mt });
-    console.log('set visible request', request);
     const response = await invoke("set_visible", { request });
   }
 
@@ -29,7 +46,6 @@
 
   async function followPids(pids: bigint[]) {
     const request = PidList.create({ pids: pids.map(pid => Pid.create({ pid: pid })) });
-    console.log('set following pids request', request);
     const response = await invoke("set_following_pids", { request });
   }
 
@@ -40,7 +56,7 @@
   watch(
     () => visibleMetrics,
     (newVal, oldVal) => {
-      const added = newVal.filter(m => !oldVal?.includes(m));
+      const added = newVal?.filter(m => !oldVal?.includes(m)) ?? [];
       const removed = oldVal?.filter(m => !newVal.includes(m)) ?? [];
       added.forEach(mt => setVisible(mt));
       removed.forEach(mt => setInvisible(mt));
