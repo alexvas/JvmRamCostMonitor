@@ -57,8 +57,7 @@
     box-shadow: 0 3.2px 7.2px rgba(0, 0, 0, 0.13), 0 0.6px 1.8px rgba(0, 0, 0, 0.11);
   }
   
-  .card-title {
-    font-size: 18px;
+  h3 {
     font-weight: 600;
     line-height: 24px;
     margin: 0 0 16px 0;

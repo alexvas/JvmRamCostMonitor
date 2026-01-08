@@ -1,5 +1,9 @@
 <script lang="ts">
-  let { availableJvmProcesses, followingPids } = $props();
+  import { getContext } from 'svelte';
+  
+  let { availableJvmProcesses } = $props();
+  const getFollowingPids = getContext<() => bigint[]>('followingPids')!;
+  let followingPids = $derived(getFollowingPids());
 
   import { invoke } from "@tauri-apps/api/core";
   import { PidList, Pid, ProcInfo } from "../generated/proto/protocol";
@@ -23,7 +27,7 @@
 
 
 <div class="column card">
-    <h2 class="card-title">Processes</h2>
+    <h3 class="card-title">Processes</h3>
     <div class="process-list">
       {#each availableJvmProcesses as process}
         <label class="process-item" class:selected={followingPids.includes(process.pid)}>
@@ -31,10 +35,14 @@
             type="checkbox"
             checked={followingPids.includes(process.pid)}
             onchange={(e) => {
+              const pids = getFollowingPids();
               if (e.currentTarget.checked) {
-                followingPids = [...followingPids, process.pid];
+                pids.push(process.pid);
               } else {
-                followingPids = followingPids.filter(pid => pid !== process.pid);
+                const index = pids.indexOf(process.pid);
+                if (index > -1) {
+                  pids.splice(index, 1);
+                }
               }
             }}
             class="process-checkbox"

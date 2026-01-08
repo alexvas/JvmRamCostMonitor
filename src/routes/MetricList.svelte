@@ -41,7 +41,7 @@
 </script>
 
 <div class="column card">
-  <h2 class="card-title">Metric Types</h2>
+  <h3 class="card-title">Metrics</h3>
   <div class="checkbox-group">
     {#each allMetricTypes as mt}
       <label class="checkbox-label">
