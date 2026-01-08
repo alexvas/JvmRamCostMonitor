@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { MetricType, SetVisibleRequest, SetInvisibleRequest, PidList } from "../generated/proto/protocol";
+  import { MetricType, SetVisibleRequest, SetInvisibleRequest, PidList, ProcInfo } from "../generated/proto/protocol";
 
   function watch<T>(getter: () => T, callback: (newVal: T, oldVal: T | undefined) => void) {
     let oldVal: T | undefined = undefined;
@@ -36,23 +36,22 @@
     followPids(followingPids);
   });
 
-
-
-
-
   watch(
     () => visibleMetrics,
     (newVal, oldVal) => {
-      console.log('Изменение:', { oldVal, newVal });
-      // Вычисление дельты
       const added = newVal.filter(m => !oldVal?.includes(m));
       const removed = oldVal?.filter(m => !newVal.includes(m)) ?? [];
-      console.log('Добавлено:', added.map(m => MetricType[m]), 'Удалено:', removed.map(m => MetricType[m]));
       added.forEach(mt => setVisible(mt));
       removed.forEach(mt => setInvisible(mt));
     }
   )
 
+  import { listen } from '@tauri-apps/api/event';
+  let availableJvmProcesses = $state<ProcInfo[]>([]);
+
+  listen<{payload: ProcInfo[]}>('available-jvm-processes-updated', (event) => {
+    availableJvmProcesses = event.payload;
+  });
 
 </script>
 
@@ -76,7 +75,12 @@
   </div>
 
   <div style="float: right;">
-    
+    <h3>Processes</h3>
+      <select multiple bind:value={followingPids}>
+        {#each availableJvmProcesses as process}
+          <option value={process.pid}>{process.pid} - {process.display_name}</option>
+        {/each}
+      </select>
   </div>
 </main>
 

@@ -17,9 +17,12 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.util.Collections.synchronizedList;
+import static jvmram.controller.impl.Utils.callActionOrGetRidOfListener;
 
 public class GraphControllerImpl implements GraphController {
 
@@ -70,7 +73,7 @@ public class GraphControllerImpl implements GraphController {
 
         if (relevantUpdate) {
             LOG.trace("Repainting after the relevant update of pid {}", pid);
-            renderers.forEach(GraphRenderer::repaintAsync);
+            callActionOrGetRidOfListener(renderers, GraphRenderer::repaintAsync);
         }
     }
 

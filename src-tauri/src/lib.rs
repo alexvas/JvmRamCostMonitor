@@ -111,11 +111,33 @@ async fn set_invisible(state: State<'_, Arc<AppState>>, request: Jmvram::SetInvi
     Ok(())
 }
 
-
 #[tauri::command]
 async fn set_following_pids(state: State<'_, Arc<AppState>>, request: Jmvram::PidList) -> Result<(), Error> {
     let mut client = get_client(&state).await;
     client.set_following_pids(request).await?;
+    Ok(())
+}
+
+
+use tauri::{AppHandle, Emitter};
+
+#[tauri::command]
+fn available_jvm_processes_updated(app: AppHandle, proc_infos: Vec<Jmvram::ProcInfo>) {
+  app.emit("available-jvm-processes-updated", &proc_infos).unwrap();
+}
+
+use crate::google::protobuf::Empty;
+
+async fn listen_available_jvm_processes_updated(app: AppHandle, state: Arc<AppState>) -> Result<(), Error> {
+    let mut client: AppBackendClient<Channel> = state.get_client().await;
+    let response = client.listen_jvm_process_list(Empty::default()).await?;
+    let mut stream = response.into_inner();
+    
+    while let Some(response) = stream.message().await? {
+        // println!("listen_jvm_process_list message: {:?}", response);
+        available_jvm_processes_updated(app.clone(), response.infos);
+    }
+    
     Ok(())
 }
 
@@ -126,7 +148,15 @@ pub fn run() {
     Builder::default()
         .setup(|app| {
             let state = Arc::new(AppState::new());
-            app.manage(state);
+            app.manage(state.clone());
+            
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = listen_available_jvm_processes_updated(app_handle, state).await {
+                    eprintln!("Error in listen_available_jvm_processes_updated: {}", e);
+                }
+            });
+            
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())

@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toSet;
+import static jvmram.controller.impl.Utils.callActionOrGetRidOfListener;
 
 public class ProcessControllerImpl implements ProcessController {
 
@@ -88,12 +89,17 @@ public class ProcessControllerImpl implements ProcessController {
         var jvmProcesses = processManager.getJvmProcesses();
         var actualPids = jvmProcesses.stream().map(JvmProcessInfo::pid).collect(toSet());
         guarded.write(() -> {
+
                     var pidsGone = new HashSet<>(explicitlyFollowingPids);
                     pidsGone.removeAll(actualPids);
                     pidsGone.forEach(this::doUnfollowPid);
+
+                    callActionOrGetRidOfListener(
+                            onProcessInfoChangedListeners,
+                            listener -> listener.accept(jvmProcesses)
+                    );
                 }
         );
-        guarded.read(() -> onProcessInfoChangedListeners.forEach(listener -> listener.accept(jvmProcesses)));
     }
 
     @Override
