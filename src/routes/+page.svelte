@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { MetricType, SetVisibleRequest } from "../generated/protocol";
+  import { MetricType, SetVisibleRequest, SetInvisibleRequest } from "../generated/proto/protocol";
 
   function watch<T>(getter: () => T, callback: (newVal: T, oldVal: T | undefined) => void) {
     let oldVal: T | undefined = undefined;
@@ -13,7 +13,7 @@
 
   let name = $state("");
   let greetMsg = $state("");
-  const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number');
+  const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number' && v >= 0);
 
   let visibleMetrics = $state<MetricType[]>(allMetricTypes);
 
@@ -24,13 +24,13 @@
   }
  
   async function setVisible(mt: MetricType) {
-    const request = SetVisibleRequest.create({ metricType: mt });
+    const request = SetVisibleRequest.create({ metric_type: mt });
     console.log('set visible request', request);
     const response = await invoke("set_visible", { request });
   }
 
   async function setInvisible(mt: MetricType) {
-    const request = SetInvisibleRequest.create({ metricType: mt });
+    const request = SetInvisibleRequest.create({ metric_type: mt });
     const response = await invoke("set_invisible", { request });
   }
 
