@@ -2,47 +2,57 @@
   import { invoke } from "@tauri-apps/api/core";
   import { MetricType, SetVisibleRequest } from "../generated/protocol";
 
+  function watch<T>(getter: () => T, callback: (newVal: T, oldVal: T | undefined) => void) {
+    let oldVal: T | undefined = undefined;
+    $effect(() => {
+      const newVal = getter();
+      callback(newVal, oldVal);
+      oldVal = $state.snapshot(newVal) as T; // снимает Proxy-обёртку
+    });
+  }
+
   let name = $state("");
   let greetMsg = $state("");
   const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number');
+
   let visibleMetrics = $state<MetricType[]>(allMetricTypes);
-  $inspect(visibleMetrics);
 
   async function greet(event: Event) {
     event.preventDefault();
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     greetMsg = await invoke("greet", { name });
   }
-/* 
+ 
   async function setVisible(mt: MetricType) {
-    const request = SetVisibleRequest.create({ mt });
-    const response = await invoke("setVisible", { request });
+    const request = SetVisibleRequest.create({ metricType: mt });
+    console.log('set visible request', request);
+    const response = await invoke("set_visible", { request });
   }
 
   async function setInvisible(mt: MetricType) {
-    const request = SetInvisibleRequest.create({ mt });
-    const response = await invoke("setInvisible", { request });
+    const request = SetInvisibleRequest.create({ metricType: mt });
+    const response = await invoke("set_invisible", { request });
   }
- */
+
+  watch(
+    () => visibleMetrics,
+    (newVal, oldVal) => {
+      console.log('Изменение:', { oldVal, newVal });
+      // Вычисление дельты
+      const added = newVal.filter(m => !oldVal?.includes(m));
+      const removed = oldVal?.filter(m => !newVal.includes(m)) ?? [];
+      console.log('Добавлено:', added.map(m => MetricType[m]), 'Удалено:', removed.map(m => MetricType[m]));
+      added.forEach(mt => setVisible(mt));
+      removed.forEach(mt => setInvisible(mt));
+    }
+  )
+
 
 </script>
 
 <main class="container">
   <h1>JVM RAM Cost</h1>
 
-<!--   <div class="row">
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://kit.svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte-kit" alt="SvelteKit Logo" />
-    </a>
-  </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
- -->  
   <div class="row">
     {#each allMetricTypes as mt}
       <label>
@@ -68,13 +78,6 @@
 </main>
 
 <style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
 
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
@@ -101,30 +104,9 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
 .row {
   display: flex;
   justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
 }
 
 h1 {
@@ -170,10 +152,6 @@ button {
   :root {
     color: #f6f6f6;
     background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
   }
 
   input,
