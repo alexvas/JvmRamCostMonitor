@@ -4,6 +4,8 @@
 
   let name = $state("");
   let greetMsg = $state("");
+  const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number');
+  let visibleMetrics = $state<MetricType[]>(allMetricTypes);
 
   async function greet(event: Event) {
     event.preventDefault();
@@ -11,10 +13,14 @@
     greetMsg = await invoke("greet", { name });
   }
 
-  async function setVisible(metricType: MetricType) {
-    const request = SetVisibleRequest.create({ metricType });
+  async function setVisible(mt: MetricType) {
+    const request = SetVisibleRequest.create({ mt });
     const response = await invoke("setVisible", { request });
-    console.log(response);
+  }
+
+  async function setInvisible(mt: MetricType) {
+    const request = SetInvisibleRequest.create({ mt });
+    const response = await invoke("setInvisible", { request });
   }
 
 </script>
@@ -34,7 +40,23 @@
     </a>
   </div>
   <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
+  <div class="row">
+    {#each allMetricTypes as mt}
+      <label>
+        <input 
+          type="checkbox"
+          name="metric-types"
+          value={mt.name()}
+          bind:group={visibleMetrics}
+        />
+        {mt.name()}
+      </label>
+    {/each}
 
+
+
+
+  </div>
   <form class="row" onsubmit={greet}>
     <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
     <button type="submit">Greet</button>
