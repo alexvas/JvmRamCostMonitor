@@ -18,6 +18,7 @@
 </script>
 
 <div>
+<h1>JVM RAM Cost</h1>
 <nav class="tabs-nav">
   <ul class="tabs-list">
     <li>
@@ -31,7 +32,6 @@
   </ul>
 </nav>
 <main class="container">
-  <h1>JVM RAM Cost</h1>
   {@render children()}
 </main>
 </div>

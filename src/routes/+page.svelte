@@ -20,10 +20,8 @@
 
 </script>
 
-<h2>Settings</h2>
+<h2>Setup</h2>
 <div class="two-column-layout">
-  
+  <ProcessList availableJvmProcesses={availableJvmProcesses} />  
   <MetricList allMetricTypes={allMetricTypes} visibleMetrics={visibleMetrics} />
-  <ProcessList availableJvmProcesses={availableJvmProcesses} />
-
 </div>
