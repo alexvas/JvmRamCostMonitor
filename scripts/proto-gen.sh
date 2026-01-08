@@ -5,4 +5,5 @@ protoc \
   --ts_proto_opt=outputEncodeMethods=false \
   --ts_proto_opt=outputClientImpl=false \
   --ts_proto_opt=outputServices=false \
+  --ts_proto_opt=forceLong=bigint \
   proto/*.proto

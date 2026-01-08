@@ -93,12 +93,6 @@ pub mod Jmvram {
     pub use crate::jvmram::*;
 }
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 async fn get_client(state: &State<'_, Arc<AppState>>) -> AppBackendClient<Channel> {
     state.get_client().await
 }
@@ -117,6 +111,14 @@ async fn set_invisible(state: State<'_, Arc<AppState>>, request: Jmvram::SetInvi
     Ok(())
 }
 
+
+#[tauri::command]
+async fn set_following_pids(state: State<'_, Arc<AppState>>, request: Jmvram::PidList) -> Result<(), Error> {
+    let mut client = get_client(&state).await;
+    client.set_following_pids(request).await?;
+    Ok(())
+}
+
 use tauri::{Builder, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -128,7 +130,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, set_visible, set_invisible])
+        .invoke_handler(tauri::generate_handler![set_visible, set_invisible, set_following_pids])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

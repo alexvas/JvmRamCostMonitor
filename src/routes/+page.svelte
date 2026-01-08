@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { MetricType, SetVisibleRequest, SetInvisibleRequest } from "../generated/proto/protocol";
+  import { MetricType, SetVisibleRequest, SetInvisibleRequest, PidList } from "../generated/proto/protocol";
 
   function watch<T>(getter: () => T, callback: (newVal: T, oldVal: T | undefined) => void) {
     let oldVal: T | undefined = undefined;
@@ -11,10 +11,7 @@
     });
   }
 
-  let name = $state("");
-  let greetMsg = $state("");
   const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number' && v >= 0);
-
   let visibleMetrics = $state<MetricType[]>(allMetricTypes);
  
   async function setVisible(mt: MetricType) {
@@ -27,6 +24,21 @@
     const request = SetInvisibleRequest.create({ metric_type: mt });
     const response = await invoke("set_invisible", { request });
   }
+
+  let followingPids = $state<bigint[]>([]);
+
+  async function followPids(pids: bigint[]) {
+    const request = PidList.create({ pids: pids.map(pid => Pid.create({ pid: pid })) });
+    const response = await invoke("set_following_pids", { request });
+  }
+
+  $effect(() => {
+    followPids(followingPids);
+  });
+
+
+
+
 
   watch(
     () => visibleMetrics,
@@ -47,6 +59,7 @@
 <main class="container">
   <h1>JVM RAM Cost</h1>
 
+  <div style="float: left;">
   {#each allMetricTypes as mt}
     <div class="row">
       <label>
@@ -60,6 +73,11 @@
       </label>
     </div>
   {/each}
+  </div>
+
+  <div style="float: right;">
+    
+  </div>
 </main>
 
 <style>
