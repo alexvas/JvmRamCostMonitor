@@ -1,11 +1,21 @@
 <script lang="ts">
   import { setContext } from 'svelte';
   import { page } from '$app/stores';
+  import { ProcInfo } from '$lib/generated/proto/protocol';
+  import { invoke } from '@tauri-apps/api/core';
 
   let { children } = $props();
   let followingPids = $state<bigint[]>([]);
-  
+  let availableJvmProcesses = $state<ProcInfo[]>([]);
+
   setContext('followingPids', () => followingPids);
+  setContext('availableJvmProcesses', () => availableJvmProcesses);
+
+  import { listen } from '@tauri-apps/api/event';
+
+  listen<{payload: ProcInfo[]}>('available-jvm-processes-updated', (event) => {
+    availableJvmProcesses = event.payload;
+  });
 
   function isActive(href: string): boolean {
     const currentPath = $page.url.pathname;

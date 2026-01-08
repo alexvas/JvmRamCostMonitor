@@ -1,7 +1,8 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   
-  let { availableJvmProcesses } = $props();
+  const getAvailableJvmProcesses = getContext<() => ProcInfo[]>('availableJvmProcesses')!;
+  let availableJvmProcesses = $derived(getAvailableJvmProcesses());
   const getFollowingPids = getContext<() => bigint[]>('followingPids')!;
   let followingPids = $derived(getFollowingPids());
 
@@ -15,12 +16,6 @@
 
   $effect(() => {
     followPids(followingPids);
-  });
-
-  import { listen } from '@tauri-apps/api/event';
-
-  listen<{payload: ProcInfo[]}>('available-jvm-processes-updated', (event) => {
-    availableJvmProcesses = event.payload;
   });
 
 </script>

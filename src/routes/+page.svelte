@@ -14,14 +14,12 @@
   import ProcessList from "./ProcessList.svelte";
 
   let allMetricTypes = $state<MetricType[]>();
-  let visibleMetrics = $state<MetricType[]>();
- 
-  let availableJvmProcesses = $state<ProcInfo[]>([]);
+  let visibleMetrics = $state<MetricType[]>(); 
 
 </script>
 
 <h2>Setup</h2>
 <div class="two-column-layout">
-  <ProcessList availableJvmProcesses={availableJvmProcesses} />  
+  <ProcessList/>  
   <MetricList allMetricTypes={allMetricTypes} visibleMetrics={visibleMetrics} />
 </div>
