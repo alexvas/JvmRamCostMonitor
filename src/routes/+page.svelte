@@ -6,13 +6,14 @@
   let greetMsg = $state("");
   const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number');
   let visibleMetrics = $state<MetricType[]>(allMetricTypes);
+  $inspect(visibleMetrics);
 
   async function greet(event: Event) {
     event.preventDefault();
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     greetMsg = await invoke("greet", { name });
   }
-
+/* 
   async function setVisible(mt: MetricType) {
     const request = SetVisibleRequest.create({ mt });
     const response = await invoke("setVisible", { request });
@@ -22,13 +23,14 @@
     const request = SetInvisibleRequest.create({ mt });
     const response = await invoke("setInvisible", { request });
   }
+ */
 
 </script>
 
 <main class="container">
-  <h1>Welcome to Tauri + Svelte</h1>
+  <h1>JVM RAM Cost</h1>
 
-  <div class="row">
+<!--   <div class="row">
     <a href="https://vitejs.dev" target="_blank">
       <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
     </a>
@@ -40,16 +42,17 @@
     </a>
   </div>
   <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
+ -->  
   <div class="row">
     {#each allMetricTypes as mt}
       <label>
         <input 
           type="checkbox"
           name="metric-types"
-          value={mt.name()}
+          value={mt}
           bind:group={visibleMetrics}
         />
-        {mt.name()}
+        {MetricType[mt]}
       </label>
     {/each}
 

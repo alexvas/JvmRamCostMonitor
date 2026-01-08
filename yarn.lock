@@ -1160,6 +1160,8 @@ __metadata:
   resolution: "jvm-ram-cost@workspace:."
   dependencies:
     "@protobuf-ts/plugin": "npm:^2.11.1"
+    "@protobuf-ts/runtime": "npm:^2.11.1"
+    "@protobuf-ts/runtime-rpc": "npm:^2.11.1"
     "@sveltejs/adapter-static": "npm:^3.0.6"
     "@sveltejs/kit": "npm:^2.9.0"
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.0"

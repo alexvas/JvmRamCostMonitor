@@ -17,10 +17,10 @@
     await invoke("toggleIncludeChildren", { includeChildren });
   }
 
-  onMount(() => {
+/*   onMount(() => {
     refresh();
   });
-</script>
+ */</script>
 
 <div>
   <h3>Processes</h3>
