@@ -1,4 +1,4 @@
-use tokio::sync::Mutex;
+use tokio::sync::OnceCell;
 use std::sync::Arc;
 use tonic::transport::Channel;
 use Jmvram::app_backend_client::AppBackendClient;
@@ -47,32 +47,30 @@ const GRPC_SERVER_PORT: u16 = 53333;
 
 use std::net::{IpAddr, Ipv4Addr};
 
-async fn create_grpc_client() -> AppBackendClient<Channel> {
-    let uri = format!("http://{}:{}", LOCALHOST_V4, GRPC_SERVER_PORT).parse::<Uri>().unwrap();
+fn create_grpc_client() -> AppBackendClient<Channel> {
+    let uri = format!("http://{}:{}", LOCALHOST_V4, GRPC_SERVER_PORT)
+        .parse::<Uri>()
+        .expect("Invalid URI");
     let endpoint = tonic::transport::Endpoint::from(uri);
-    let channel = endpoint.connect().await.expect("Can't create gRPC channel");
+    let channel = endpoint.connect_lazy();
     AppBackendClient::new(channel)
 }
 
-fn sync_create_grpc_client() -> AppBackendClient<Channel> {
-    let handle = tokio::runtime::Handle::try_current().unwrap_or_else(|_| {
-        tokio::runtime::Runtime::new()
-            .expect("Failed to create runtime")
-            .handle()
-            .clone()
-    });
-    let client = handle.block_on(create_grpc_client());
-    client
-}
-
 struct AppState {
-    client: AppBackendClient<Channel>,
+    client: OnceCell<AppBackendClient<Channel>>,
 }
 
 impl AppState {
     fn new() -> Self {
-        let client = sync_create_grpc_client();
-        Self { client }
+        Self { 
+            client: OnceCell::new() 
+        }
+    }
+
+    async fn get_client(&self) -> AppBackendClient<Channel> {
+        self.client.get_or_init(|| async {
+            create_grpc_client()
+        }).await.clone()
     }
 }
 
@@ -101,26 +99,20 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-async fn extract_client(state: State<'_, Arc<Mutex<AppState>>>) -> Result<AppBackendClient<Channel>, Error> {
-    let cloned = Arc::clone(&state);
-    let lock = cloned
-            .try_lock()
-            .map_err(|_| String::from("cannot change state while it is being used"))
-            .unwrap();
-    let client = lock.client.to_owned();
-    Ok(client)
+async fn get_client(state: &State<'_, Arc<AppState>>) -> AppBackendClient<Channel> {
+    state.get_client().await
 }
 
 #[tauri::command]
-async fn set_visible(state: State<'_, Arc<Mutex<AppState>>>, request: Jmvram::SetVisibleRequest) -> Result<(), Error> {
-    let mut client = extract_client(state).await?;
+async fn set_visible(state: State<'_, Arc<AppState>>, request: Jmvram::SetVisibleRequest) -> Result<(), Error> {
+    let mut client = get_client(&state).await;
     client.set_visible(request).await?;
     Ok(())
 }
 
 #[tauri::command]
-async fn set_invisible(state: State<'_, Arc<Mutex<AppState>>>, request: Jmvram::SetInvisibleRequest) -> Result<(), Error> {
-    let mut client = extract_client(state).await?;
+async fn set_invisible(state: State<'_, Arc<AppState>>, request: Jmvram::SetInvisibleRequest) -> Result<(), Error> {
+    let mut client = get_client(&state).await;
     client.set_invisible(request).await?;
     Ok(())
 }
@@ -131,9 +123,8 @@ use tauri::{Builder, Manager};
 pub fn run() {
     Builder::default()
         .setup(|app| {
-            let state = AppState::new();
-            let guarded_state = Mutex::new(state);
-            app.manage(guarded_state);
+            let state = Arc::new(AppState::new());
+            app.manage(state);
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
