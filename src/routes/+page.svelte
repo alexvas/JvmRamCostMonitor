@@ -16,12 +16,6 @@
   const allMetricTypes = Object.values(MetricType).filter((v): v is MetricType => typeof v === 'number' && v >= 0);
 
   let visibleMetrics = $state<MetricType[]>(allMetricTypes);
-
-  async function greet(event: Event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
-  }
  
   async function setVisible(mt: MetricType) {
     const request = SetVisibleRequest.create({ metric_type: mt });
@@ -53,8 +47,8 @@
 <main class="container">
   <h1>JVM RAM Cost</h1>
 
-  <div class="row">
-    {#each allMetricTypes as mt}
+  {#each allMetricTypes as mt}
+    <div class="row">
       <label>
         <input 
           type="checkbox"
@@ -64,17 +58,8 @@
         />
         {MetricType[mt]}
       </label>
-    {/each}
-
-
-
-
-  </div>
-  <form class="row" onsubmit={greet}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{greetMsg}</p>
+    </div>
+  {/each}
 </main>
 
 <style>
@@ -106,7 +91,7 @@
 
 .row {
   display: flex;
-  justify-content: center;
+  justify-content: left;
 }
 
 h1 {
@@ -114,38 +99,9 @@ h1 {
 }
 
 input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
 
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
+input {
   outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -154,13 +110,9 @@ button {
     background-color: #2f2f2f;
   }
 
-  input,
-  button {
+  input {
     color: #ffffff;
     background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
   }
 }
 
