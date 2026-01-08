@@ -9,8 +9,8 @@
     PidList, 
     ProcInfo, 
     ApplicableMetricsResponse,
-  } from "../generated/proto/protocol";
-  import MetricList from "./MetricList.svelte";
+  } from '$lib/generated/proto/protocol';
+  import MetricList from '$lib/MetricList.svelte';
   import ProcessList from "./ProcessList.svelte";
 
   let allMetricTypes = $state<MetricType[]>();

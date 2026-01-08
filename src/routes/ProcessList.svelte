@@ -6,7 +6,7 @@
   let followingPids = $derived(getFollowingPids());
 
   import { invoke } from "@tauri-apps/api/core";
-  import { PidList, Pid, ProcInfo } from "../generated/proto/protocol";
+  import { PidList, Pid, ProcInfo } from '$lib/generated/proto/protocol';
 
   async function followPids(pids: bigint[]) {
     const request = PidList.create({ pids: pids.map(pid => Pid.create({ pid: pid })) });

@@ -3,9 +3,9 @@
     MetricType, 
     SetVisibleRequest, 
     SetInvisibleRequest, 
-  } from "../generated/proto/protocol";
+  } from '$lib/generated/proto/protocol';
   import { invoke } from "@tauri-apps/api/core";
-  import watch from "./utils.svelte";
+  import watch from '$lib/utils.svelte';
 
   let { allMetricTypes, visibleMetrics } = $props();
 
