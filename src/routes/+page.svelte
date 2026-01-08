@@ -58,42 +58,45 @@
 <main class="container">
   <h1>JVM RAM Cost</h1>
 
-  <div style="float: left;">
-  {#each allMetricTypes as mt}
-    <div class="row">
-      <label>
-        <input 
-          type="checkbox"
-          name="metric-types"
-          value={mt}
-          bind:group={visibleMetrics}
-        />
-        {MetricType[mt]}
-      </label>
+  <div class="two-column-layout">
+    <div class="column card">
+      <h2 class="card-title">Metric Types</h2>
+      <div class="checkbox-group">
+        {#each allMetricTypes as mt}
+          <label class="checkbox-label">
+            <input 
+              type="checkbox"
+              name="metric-types"
+              value={mt}
+              bind:group={visibleMetrics}
+              class="fluent-checkbox"
+            />
+            <span class="checkbox-text">{MetricType[mt]}</span>
+          </label>
+        {/each}
+      </div>
     </div>
-  {/each}
-  </div>
 
-  <div style="float: right;">
-    <h3>Processes</h3>
-      <select multiple bind:value={followingPids}>
+    <div class="column card">
+      <h2 class="card-title">Processes</h2>
+      <select multiple bind:value={followingPids} class="fluent-select">
         {#each availableJvmProcesses as process}
           <option value={process.pid}>{process.pid} - {process.display_name}</option>
         {/each}
       </select>
+    </div>
   </div>
 </main>
 
 <style>
-
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 400;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+  color: #202020;
+  background-color: #f3f3f3;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -104,37 +107,143 @@
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  padding: 24px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
-.row {
-  display: flex;
-  justify-content: left;
 }
 
 h1 {
-  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  margin: 0 0 24px 0;
+  color: #202020;
+  text-align: left;
 }
 
-input,
+.two-column-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+}
 
-input {
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1.6px 3.6px rgba(0, 0, 0, 0.13), 0 0.3px 0.9px rgba(0, 0, 0, 0.11);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 3.2px 7.2px rgba(0, 0, 0, 0.13), 0 0.6px 1.8px rgba(0, 0, 0, 0.11);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  margin: 0 0 16px 0;
+  color: #202020;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.fluent-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #0078d4;
+  flex-shrink: 0;
+}
+
+.checkbox-text {
+  font-size: 14px;
+  line-height: 20px;
+  color: #202020;
+}
+
+.fluent-select {
+  width: 100%;
+  min-height: 200px;
+  padding: 8px 12px;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  background-color: #ffffff;
+  font-size: 14px;
+  line-height: 20px;
+  color: #202020;
+  font-family: inherit;
   outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fluent-select:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 0 1px #0078d4;
+}
+
+.fluent-select option {
+  padding: 8px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
+    color: #ffffff;
+    background-color: #202020;
   }
 
-  input {
+  h1 {
     color: #ffffff;
-    background-color: #0f0f0f98;
+  }
+
+  .card {
+    background-color: #2d2d2d;
+    box-shadow: 0 1.6px 3.6px rgba(0, 0, 0, 0.36), 0 0.3px 0.9px rgba(0, 0, 0, 0.24);
+  }
+
+  .card:hover {
+    box-shadow: 0 3.2px 7.2px rgba(0, 0, 0, 0.36), 0 0.6px 1.8px rgba(0, 0, 0, 0.24);
+  }
+
+  .card-title {
+    color: #ffffff;
+  }
+
+  .checkbox-text {
+    color: #ffffff;
+  }
+
+  .fluent-select {
+    background-color: #1e1e1e;
+    border-color: #3d3d3d;
+    color: #ffffff;
+  }
+
+  .fluent-select:focus {
+    border-color: #60cdff;
+    box-shadow: 0 0 0 1px #60cdff;
   }
 }
 
