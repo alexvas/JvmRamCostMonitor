@@ -72,6 +72,23 @@
     graphVersion++;
   });
 
+  let prefersDark = $state(
+    typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const updateTheme = (e: MediaQueryListEvent | MediaQueryList) => {
+      prefersDark = e.matches;
+    };
+    updateTheme(mediaQuery);
+    mediaQuery.addEventListener("change", updateTheme);
+    return () => mediaQuery.removeEventListener("change", updateTheme);
+  });
+
+  setContext("prefersDark", () => prefersDark);
+
   function isActive(href: string): boolean {
     const currentPath = page.url.pathname;
     if (href === "/") {

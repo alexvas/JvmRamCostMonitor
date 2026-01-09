@@ -1,16 +1,9 @@
 <svg class="graph-plot" {viewBox} preserveAspectRatio="none">
-  <style>
-    .graph-path {
-      stroke: red;
-      fill: none;
-      stroke-width: 0.7;
-      vector-effect: non-scaling-stroke;
-    }
-  </style>
+  {@html dynamicStyles}
   {#if graphs && processMinMax}
     {#each graphs as graph (graph.metricType)}
       <path
-        class="graph-path"
+        class="graph-path graph-path-{MetricType[graph.metricType]}"
         d={graph.points
           .map((point: GraphPoint, i: number) => {
             const minTime = processMinMax!.minMoment.getTime();
@@ -30,7 +23,9 @@
 
 <script lang="ts">
   import { type GraphPoint, graphStore } from "$lib/GraphStore";
+  import { MetricType } from "$lib/generated/proto/protocol";
   import { getContext } from "svelte";
+  import { graphMetaMap } from "$lib/GraphMeta";
   let { pid }: { pid: bigint } = $props();
   let graphVersion = getContext<() => number>("graphVersion")!();
   let graphs = $derived(
@@ -56,6 +51,30 @@
     // width = диапазон времени в десятых долях секунды (делим на 100)
     // height = максимальное значение в килобайтах (делим на 1024)
     return `0 0 ${timeRange / 100} ${maxBytes / 1024}`;
+  });
+  let dynamicStyles = $derived.by(() => {
+    const baseStyles = `
+      .graph-path {
+        fill: none;
+        stroke-width: 0.7;
+        vector-effect: non-scaling-stroke;
+      }
+    `;
+    let prefersDark = getContext<() => boolean>("prefersDark")!();
+    const graphColor = prefersDark ? "color_dark" : "color_light";
+    const metricStyles = Object.keys(graphMetaMap)
+      .map((metricTypeKey) => {
+        const metricType = Number(metricTypeKey) as MetricType;
+        const metricTypeName = MetricType[metricType];
+        const meta = graphMetaMap[metricType];
+        return `
+      .graph-path-${metricTypeName} {
+        stroke: ${meta[graphColor]};
+      }
+    `;
+      })
+      .join("");
+    return `<style>${baseStyles}${metricStyles}</style>`;
   });
 </script>
 

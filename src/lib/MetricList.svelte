@@ -41,12 +41,12 @@
 
   async function setVisible(mt: MetricType) {
     const request = SetVisibleRequest.create({ metric_type: mt });
-    const response = await invoke("set_visible", { request });
+    await invoke("set_visible", { request });
   }
 
   async function setInvisible(mt: MetricType) {
     const request = SetInvisibleRequest.create({ metric_type: mt });
-    const response = await invoke("set_invisible", { request });
+    await invoke("set_invisible", { request });
   }
 
   let oldVisibleMetrics: MetricType[] | undefined = undefined;
