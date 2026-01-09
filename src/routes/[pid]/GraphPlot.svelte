@@ -73,7 +73,7 @@
       <text
         class="grid-label-y"
         x={30}
-        y={toY(line.yInDataUnits)}
+        y={toYForLabel(line.bytes / 1024.0)}
         text-anchor="end"
         dominant-baseline="middle"
         fill={frameColor}
@@ -190,6 +190,13 @@
   function toY(kilobytes: number): number {
     // Инвертируем Y: kilobytes=0 -> y=низ, kilobytes=max -> y=верх
     return graphTranslateY + (dataHeight - kilobytes) * graphScaleY;
+  }
+
+  // Функция для подписей ординаты: прямое преобразование без инверсии
+  // kilobytes=0 -> низ графика (большая координата Y)
+  // kilobytes=max -> верх графика (маленькая координата Y)
+  function toYForLabel(kilobytes: number): number {
+    return graphTranslateY + graphAreaHeight - kilobytes * graphScaleY;
   }
 
   let prefersDark = getContext<() => boolean>("prefersDark")!();
