@@ -6,79 +6,80 @@
 >
   {@html dynamicStyles}
   {#if graphs && processMinMax}
-    <rect
-      class="graph-frame"
-      x={frameX}
-      y={frameY}
-      width={frameWidth}
-      height={frameHeight}
-    ></rect>
-    <path
-      class="grid-lines"
-      d={gridVerticalLines
-        .map(
-          (line) => `M ${line.x},${frameY} L ${line.x},${frameY + frameHeight}`,
-        )
-        .join(" ")}
-    ></path>
-    <path
-      class="grid-lines"
-      d={gridHorizontalLines
-        .map(
-          (line) => `M ${frameX},${line.y} L ${frameX + frameWidth},${line.y}`,
-        )
-        .join(" ")}
-    ></path>
-    <g transform={`translate(0, ${labelY})`}>
-      <g transform={`scale(1, ${textScaleY})`}>
-        {#each gridVerticalLines as line}
-          <text
-            class="grid-label"
-            x="0"
-            y="0"
-            text-anchor="middle"
-            dominant-baseline="hanging"
-            fill={frameColor}
-            transform={`translate(${line.x}, 0)`}
-          >
-            {line.label}
-          </text>
+    <!-- Группа трансформаций для графика -->
+    <g transform={`translate(${graphTranslateX}, ${graphTranslateY})`}>
+      <g transform={`scale(${graphScaleX}, ${graphScaleY})`}>
+        <!-- Рамка графика -->
+        <rect
+          class="graph-frame"
+          x="0"
+          y="0"
+          width={dataWidth}
+          height={dataHeight}
+        ></rect>
+        <!-- Вспомогательные вертикальные линии -->
+        <path
+          class="grid-lines"
+          d={gridVerticalLines
+            .map(
+              (line) =>
+                `M ${line.xInDataUnits},0 L ${line.xInDataUnits},${dataHeight}`,
+            )
+            .join(" ")}
+        ></path>
+        <!-- Вспомогательные горизонтальные линии -->
+        <path
+          class="grid-lines"
+          d={gridHorizontalLines
+            .map(
+              (line) =>
+                `M 0,${line.yInDataUnits} L ${dataWidth},${line.yInDataUnits}`,
+            )
+            .join(" ")}
+        ></path>
+        <!-- Графики данных -->
+        {#each graphs as graph (graph.metricType)}
+          <path
+            class="graph-path graph-path-{MetricType[graph.metricType]}"
+            d={graph.points
+              .map((point: GraphPoint, i: number) => {
+                const minTime = processMinMax!.minMoment.getTime();
+                const maxBytes = Number(processMinMax!.maxBytes);
+                // Преобразуем в единицы данных: десятые секунды и килобайты
+                const x = (point.moment.getTime() - minTime) / 100;
+                const y = (maxBytes - Number(point.bytes)) / 1024;
+                return `${i === 0 ? "M" : "L"} ${x},${y}`;
+              })
+              .join(" ")}
+          ></path>
         {/each}
       </g>
     </g>
-    <g transform={`translate(${frameX - leftLabelSpace}, 0)`}>
-      <g transform={`scale(1, ${textScaleY})`}>
-        {#each gridHorizontalLines as line}
-          <text
-            class="grid-label"
-            x="0"
-            y="0"
-            text-anchor="end"
-            dominant-baseline="middle"
-            fill={frameColor}
-            transform={`translate(0, ${line.y})`}
-          >
-            {line.label}
-          </text>
-        {/each}
-      </g>
-    </g>
-    {#each graphs as graph (graph.metricType)}
-      <path
-        class="graph-path graph-path-{MetricType[graph.metricType]}"
-        d={graph.points
-          .map((point: GraphPoint, i: number) => {
-            const minTime = processMinMax!.minMoment.getTime();
-            const maxBytes = Number(processMinMax!.maxBytes);
-            // Горизонтальная координата: вычитаем минимальное время, делим на 100 (десятые доли секунды)
-            const x = (point.moment.getTime() - minTime) / 100;
-            // Вертикальная координата: байты делим на 1024 (килобайты), инвертируем для SVG
-            // Нам нужно: bytes=0 -> y=maxKB, bytes=maxBytes -> y=0
-            const y = (maxBytes - Number(point.bytes)) / 1024;
-            return `${i === 0 ? "M" : "L"} ${x},${y}`;
-          })
-          .join(" ")}
-      ></path>
+    <!-- Подписи абсциссы (вне групп трансформаций) -->
+    {#each gridVerticalLines as line}
+      <text
+        class="grid-label-x"
+        x={toX(line.xInDataUnits)}
+        y={containerHeight - 25}
+        text-anchor="middle"
+        dominant-baseline="hanging"
+        fill={frameColor}
+      >
+        {line.label}
+      </text>
+    {/each}
+    <!-- Подписи ординаты (вне групп трансформаций) -->
+    {#each gridHorizontalLines as line}
+      <text
+        class="grid-label-y"
+        x={30}
+        y={toY(line.yInDataUnits)}
+        text-anchor="end"
+        dominant-baseline="middle"
+        fill={frameColor}
+      >
+        {line.label}
+      </text>
     {/each}
   {/if}
 </svg>
@@ -90,53 +91,21 @@
   import { graphMetaMap } from "$lib/GraphMeta";
   let { pid }: { pid: bigint } = $props();
   let svgElement: SVGElement | null = $state(null);
-  let svgAspectRatio = $state(1);
   let containerWidth = $state(1);
   let containerHeight = $state(1);
+
   const getGraphVersion = getContext<() => number>("graphVersion")!;
   let graphVersion = $derived(getGraphVersion());
   let graphs = $derived.by(() => {
-    // используем переменную graphVersion для side-effect,
-    // чтобы перерисовать график при поступлении новых данных
     graphVersion; // читаем graphVersion для реактивности
     return graphStore.getGraphs(pid);
   });
   let processMinMax = $derived.by(() => {
-    // используем переменную graphVersion для side-effect,
-    // чтобы перерисовать график при поступлении новых данных
     graphVersion; // читаем graphVersion для реактивности
     return graphStore.getProcessMinMax(pid);
   });
 
-  // Минимальный диапазон времени графика в миллисекундах (2 минуты).
-  const MIN_TIME_RANGE = 120 * 1000;
-
-  // Исходные размеры области графика (без отступов)
-  let frameWidth = $derived.by(() => {
-    if (!processMinMax) return 1;
-    const minTime = processMinMax.minMoment.getTime();
-    const maxTime = processMinMax.maxMoment.getTime();
-    const timeRange = Math.max(maxTime - minTime || 1, MIN_TIME_RANGE);
-    return Math.round(timeRange / 100.0);
-  });
-
-  let frameHeight = $derived.by(() => {
-    if (!processMinMax) return 1;
-    const maxBytes = Number(processMinMax.maxBytes) || 1;
-    return Math.round(maxBytes / 1024.0);
-  });
-
-  // Координаты рамки (исходные координаты графика)
-  let frameX = 0;
-  let frameY = 0;
-
-  // Отступ для меток
-  let labelOffset = 20000;
-
-  // Координата Y для меток (ниже рамки)
-  let labelY = $derived.by(() => frameY + frameHeight + labelOffset);
-
-  // Отслеживание размеров SVG для вычисления искажения
+  // Отслеживание размеров SVG контейнера
   $effect(() => {
     const element = svgElement;
     if (!element || typeof window === "undefined") return;
@@ -145,7 +114,6 @@
       if (rect.width > 0 && rect.height > 0) {
         containerWidth = rect.width;
         containerHeight = rect.height;
-        svgAspectRatio = rect.height / rect.width;
       }
     };
     updateSizes();
@@ -154,46 +122,76 @@
     return () => resizeObserver.disconnect();
   });
 
-  // Коэффициент масштабирования для компенсации искажения текста
-  // из-за preserveAspectRatio="none"
-  // При preserveAspectRatio="none" SVG растягивается на контейнер:
-  // - Горизонтальный масштаб: containerWidth / viewBoxWidth
-  // - Вертикальный масштаб: containerHeight / viewBoxHeight
-  // Чтобы текст не сплющивался, нужно компенсировать разницу масштабов:
-  // scaleY = (containerWidth / viewBoxWidth) / (containerHeight / viewBoxHeight)
-  //        = (containerWidth * viewBoxHeight) / (containerHeight * viewBoxWidth)
-  let textScaleY = $derived.by(() => {
-    if (!processMinMax || containerWidth === 0 || containerHeight === 0)
-      return 1;
-    const width = frameWidth;
-    const height = frameHeight;
-    const viewBoxWidth = width * 1.2;
-    const labelSpace = 50;
-    const viewBoxHeight = height * 1.2 + labelSpace;
-    // Используем абсолютные размеры для точного расчета
-    return (containerWidth * viewBoxHeight) / (containerHeight * viewBoxWidth);
-  });
-
-  // Слева отступ для горизонтальных меток (примерно 10000 единиц)
-  const leftLabelSpace = 100;
-
-  // viewBox увеличен на 20% с отступами по 10% с каждой стороны
-  // Снизу дополнительный отступ для меток, слева для горизонтальных меток
+  // ViewBox равен размерам контейнера (1:1)
   let viewBox = $derived.by(() => {
-    if (!processMinMax) {
-      return "0 0 1 1";
-    }
-    const width = frameWidth;
-    const height = frameHeight;
-    // Увеличиваем размеры на 20% и смещаем на -10% для отступов
-    const viewBoxX = Math.round(-width * 0.1 - leftLabelSpace);
-    const viewBoxY = Math.round(-height * 0.1);
-    const viewBoxWidth = Math.round(width * 1.2 + leftLabelSpace);
-    // Добавляем снизу дополнительное место для меток (примерно 50 единиц = 50KB в системе координат)
-    const labelSpace = 50;
-    const viewBoxHeight = Math.round(height * 1.2 + labelSpace);
-    return `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
+    return `0 0 ${containerWidth} ${containerHeight}`;
   });
+
+  // Константы для отступов
+  const PADDING_PERCENT = 0.1; // 10% со всех сторон
+  const BOTTOM_LABEL_SPACE = 25; // пикселей для подписей снизу
+  const LEFT_LABEL_SPACE = 30; // пикселей для подписей слева
+
+  // Размеры области графика (после вычитания отступов)
+  let graphAreaWidth = $derived.by(() => {
+    const padding = containerWidth * PADDING_PERCENT;
+    return containerWidth - padding * 2 - LEFT_LABEL_SPACE;
+  });
+
+  let graphAreaHeight = $derived.by(() => {
+    const padding = containerHeight * PADDING_PERCENT;
+    return containerHeight - padding * 2 - BOTTOM_LABEL_SPACE;
+  });
+
+  // Минимальный диапазон времени графика в миллисекундах (2 минуты)
+  const MIN_TIME_RANGE = 120 * 1000;
+
+  // Размеры данных графика в единицах данных
+  let dataWidth = $derived.by(() => {
+    if (!processMinMax) return 1;
+    const minTime = processMinMax.minMoment.getTime();
+    const maxTime = processMinMax.maxMoment.getTime();
+    const timeRange = Math.max(maxTime - minTime || 1, MIN_TIME_RANGE);
+    return timeRange / 100.0; // в десятых долях секунды
+  });
+
+  let dataHeight = $derived.by(() => {
+    if (!processMinMax) return 1;
+    const maxBytes = Number(processMinMax.maxBytes) || 1;
+    return maxBytes / 1024.0; // в килобайтах
+  });
+
+  // Трансформации для графика
+  let graphTranslateX = $derived.by(() => {
+    const padding = containerWidth * PADDING_PERCENT;
+    return padding + LEFT_LABEL_SPACE;
+  });
+
+  let graphTranslateY = $derived.by(() => {
+    const padding = containerHeight * PADDING_PERCENT;
+    return padding;
+  });
+
+  let graphScaleX = $derived.by(() => {
+    if (dataWidth === 0) return 1;
+    return graphAreaWidth / dataWidth;
+  });
+
+  let graphScaleY = $derived.by(() => {
+    if (dataHeight === 0) return 1;
+    return graphAreaHeight / dataHeight;
+  });
+
+  // Функции преобразования координат
+  function toX(tenthsOfSecond: number): number {
+    return graphTranslateX + tenthsOfSecond * graphScaleX;
+  }
+
+  function toY(kilobytes: number): number {
+    // Инвертируем Y: kilobytes=0 -> y=низ, kilobytes=max -> y=верх
+    return graphTranslateY + (dataHeight - kilobytes) * graphScaleY;
+  }
+
   let prefersDark = getContext<() => boolean>("prefersDark")!();
   let frameColor = prefersDark ? "white" : "black";
 
@@ -227,20 +225,16 @@
     minTime: number,
     interval: number,
   ): string {
-    // Вычисляем относительное время от начала графика
     const relativeMs = tick - minTime;
     const seconds = Math.floor(relativeMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
     if (interval < 60 * 1000) {
-      // Интервалы меньше минуты - показываем секунды
       return `${seconds}s`;
     } else if (interval < 60 * 60 * 1000) {
-      // Интервалы меньше часа - показываем минуты
       return `${minutes}m`;
     } else {
-      // Интервалы час и больше - показываем часы
       return `${hours}h`;
     }
   }
@@ -252,22 +246,23 @@
     const gb = 1024 * 1024 * 1024;
 
     if (bytes >= gb) {
-      // Гигабайты
       const gbValue = bytes / gb;
       return `${gbValue.toFixed(gbValue >= 10 ? 0 : 1)}GB`;
     } else if (bytes >= mb) {
-      // Мегабайты
       const mbValue = bytes / mb;
       return `${mbValue.toFixed(mbValue >= 10 ? 0 : 1)}MB`;
     } else {
-      // Килобайты
       const kbValue = bytes / kb;
       return `${Math.round(kbValue)}KB`;
     }
   }
 
   // Мемоизация для gridVerticalLines
-  let cachedGridLines: Array<{ x: number; tick: number; label: string }> = [];
+  let cachedGridLines: Array<{
+    xInDataUnits: number;
+    tick: number;
+    label: string;
+  }> = [];
   let cachedMinTime: number | null = null;
   let cachedMaxTime: number | null = null;
   let cachedInterval: number | null = null;
@@ -286,12 +281,9 @@
     // Выбираем интервал: максимальное количество осей, но не более 10
     let selectedInterval = GRID_INTERVALS_MS[GRID_INTERVALS_MS.length - 1];
     for (const interval of GRID_INTERVALS_MS) {
-      // Вычисляем количество осей для данного интервала
-      // Находим первое время, кратное интервалу, которое >= minTime
       const firstTick = Math.ceil(minTime / interval) * interval;
-      if (firstTick > maxTime) continue; // интервал слишком большой
+      if (firstTick > maxTime) continue;
 
-      // Считаем количество осей
       let count = 0;
       for (let tick = firstTick; tick <= maxTime; tick += interval) {
         count++;
@@ -310,22 +302,24 @@
       cachedInterval === selectedInterval &&
       cachedGridLines.length > 0
     ) {
-      // Обновляем только координаты x, если minTime изменился (но диапазон тот же)
       return cachedGridLines.map((line) => ({
         ...line,
-        x: Math.round((line.tick - minTime) / 100.0),
+        xInDataUnits: (line.tick - minTime) / 100.0,
       }));
     }
 
     // Генерируем позиции осей
     const firstTick = Math.ceil(minTime / selectedInterval) * selectedInterval;
-    const lines: Array<{ x: number; tick: number; label: string }> = [];
+    const lines: Array<{
+      xInDataUnits: number;
+      tick: number;
+      label: string;
+    }> = [];
 
     for (let tick = firstTick; tick < maxTime; tick += selectedInterval) {
-      // Координата x: вычитаем минимальное время, делим на 100 (десятые доли секунды)
-      const x = Math.round((tick - minTime) / 100.0);
+      const xInDataUnits = (tick - minTime) / 100.0; // в десятых долях секунды
       const label = formatTimeLabel(tick, minTime, selectedInterval);
-      lines.push({ x, tick, label });
+      lines.push({ xInDataUnits, tick, label });
     }
 
     // Кэшируем результат
@@ -339,7 +333,7 @@
 
   // Мемоизация для gridHorizontalLines
   let cachedHorizontalLines: Array<{
-    y: number;
+    yInDataUnits: number;
     bytes: number;
     label: string;
   }> = [];
@@ -356,18 +350,15 @@
       return [];
     }
     const maxBytes = Number(processMinMax.maxBytes);
-    const minBytes = 0; // Всегда начинаем с 0
+    const minBytes = 0;
 
     // Выбираем интервал: максимальное количество осей, но не более 5
     let selectedInterval =
       GRID_INTERVALS_BYTES[GRID_INTERVALS_BYTES.length - 1];
     for (const interval of GRID_INTERVALS_BYTES) {
-      // Вычисляем количество осей для данного интервала
-      // Находим первое значение, кратное интервалу, которое >= minBytes
       const firstTick = Math.ceil(minBytes / interval) * interval;
-      if (firstTick > maxBytes) continue; // интервал слишком большой
+      if (firstTick > maxBytes) continue;
 
-      // Считаем количество осей
       let count = 0;
       for (let tick = firstTick; tick <= maxBytes; tick += interval) {
         count++;
@@ -386,22 +377,24 @@
       cachedBytesInterval === selectedInterval &&
       cachedHorizontalLines.length > 0
     ) {
-      // Обновляем только координаты y, если maxBytes изменился (но диапазон тот же)
       return cachedHorizontalLines.map((line) => ({
         ...line,
-        y: Math.round((maxBytes - line.bytes) / 1024.0),
+        yInDataUnits: (maxBytes - line.bytes) / 1024.0,
       }));
     }
 
     // Генерируем позиции осей
     const firstTick = Math.ceil(minBytes / selectedInterval) * selectedInterval;
-    const lines: Array<{ y: number; bytes: number; label: string }> = [];
+    const lines: Array<{
+      yInDataUnits: number;
+      bytes: number;
+      label: string;
+    }> = [];
 
     for (let tick = firstTick; tick <= maxBytes; tick += selectedInterval) {
-      // Координата y: инвертируем (bytes=0 -> y=maxKB, bytes=maxBytes -> y=0)
-      const y = Math.round((maxBytes - tick) / 1024.0);
+      const yInDataUnits = (maxBytes - tick) / 1024.0; // в килобайтах, инвертировано
       const label = formatBytesLabel(tick);
-      lines.push({ y, bytes: tick, label });
+      lines.push({ yInDataUnits, bytes: tick, label });
     }
 
     // Кэшируем результат
@@ -442,14 +435,13 @@
         opacity: 0.3;
         fill: none;
       }
-      .grid-label {
+      .grid-label-x,
+      .grid-label-y {
         fill: ${frameColor};
-        font-size: 250px;
-        opacity: 1;
+        font-size: 12px;
         font-family: sans-serif;
         font-weight: normal;
         pointer-events: none;
-        transform-origin: center top;
       }
     `;
     const graphColor = prefersDark ? "color_dark" : "color_light";
