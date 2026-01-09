@@ -88,7 +88,15 @@
   let prefersDark = getContext<() => boolean>("prefersDark")!();
   let frameColor = prefersDark ? "white" : "black";
   let dynamicStyles = $derived.by(() => {
-    const baseStyles = `
+    const baseStyles = /*css*/ `
+      .graph-plot {
+        width: 100%;
+        height: 100%;
+        background-color: ${prefersDark ? "#202020" : "#f3f3f3"};
+        display: block;
+        max-height: 100%;
+        overflow: hidden;
+      }
       .graph-path {
         fill: none;
         stroke-width: 0.7;
@@ -108,7 +116,7 @@
         const metricType = Number(metricTypeKey) as MetricType;
         const metricTypeName = MetricType[metricType];
         const meta = graphMetaMap[metricType];
-        return `
+        return /*css*/ `
       .graph-path-${metricTypeName} {
         stroke: ${meta[graphColor]};
       }
@@ -118,13 +126,3 @@
     return `<style>${baseStyles}${metricStyles}</style>`;
   });
 </script>
-
-<style>
-  .graph-plot {
-    width: 100%;
-    height: 100%;
-    display: block;
-    max-height: 100%;
-    overflow: hidden;
-  }
-</style>
