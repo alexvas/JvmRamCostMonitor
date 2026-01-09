@@ -1,6 +1,13 @@
 <svg class="graph-plot" {viewBox} preserveAspectRatio="none">
   {@html dynamicStyles}
   {#if graphs && processMinMax}
+    <rect
+      class="graph-frame"
+      x={frameX}
+      y={frameY}
+      width={frameWidth}
+      height={frameHeight}
+    ></rect>
     {#each graphs as graph (graph.metricType)}
       <path
         class="graph-path graph-path-{MetricType[graph.metricType]}"
@@ -45,20 +52,38 @@
   // Минимальный диапазон времени графика в миллисекундах (2 минуты).
   const MIN_TIME_RANGE = 120 * 1000;
 
+  // Исходные размеры области графика (без отступов)
+  let frameWidth = $derived.by(() => {
+    if (!processMinMax) return 1;
+    const minTime = processMinMax.minMoment.getTime();
+    const maxTime = processMinMax.maxMoment.getTime();
+    const timeRange = Math.max(maxTime - minTime || 1, MIN_TIME_RANGE);
+    return Math.round(timeRange / 100.0);
+  });
+
+  let frameHeight = $derived.by(() => {
+    if (!processMinMax) return 1;
+    const maxBytes = Number(processMinMax.maxBytes) || 1;
+    return Math.round(maxBytes / 1024.0);
+  });
+
+  // Координаты рамки (исходные координаты графика)
+  let frameX = $derived(0);
+  let frameY = $derived(0);
+
+  // viewBox увеличен на 20% с отступами по 10% с каждой стороны
   let viewBox = $derived.by(() => {
     if (!processMinMax) {
       return "0 0 1 1";
     }
-    const minTime = processMinMax.minMoment.getTime();
-    const maxTime = processMinMax.maxMoment.getTime();
-
-    const timeRange = Math.max(maxTime - minTime || 1, MIN_TIME_RANGE);
-    const maxBytes = Number(processMinMax.maxBytes) || 1;
-    // viewBox: x, y, width, height
-    // x = 0, y = 0 (нормализованные координаты)
-    // width = диапазон времени в десятых долях секунды (делим на 100)
-    // height = максимальное значение в килобайтах (делим на 1024)
-    return `0 0 ${timeRange / 100} ${maxBytes / 1024}`;
+    const width = frameWidth;
+    const height = frameHeight;
+    // Увеличиваем размеры на 20% и смещаем на -10% для отступов
+    const viewBoxX = Math.round(-width * 0.1);
+    const viewBoxY = Math.round(-height * 0.1);
+    const viewBoxWidth = Math.round(width * 1.2);
+    const viewBoxHeight = Math.round(height * 1.2);
+    return `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
   });
   let dynamicStyles = $derived.by(() => {
     const baseStyles = `
@@ -66,6 +91,13 @@
         fill: none;
         stroke-width: 0.7;
         vector-effect: non-scaling-stroke;
+      }
+      .graph-frame {
+        fill: none;
+        stroke: white;
+        stroke-width: 0.5;
+        vector-effect: non-scaling-stroke;
+        opacity: 0.3;
       }
     `;
     let prefersDark = getContext<() => boolean>("prefersDark")!();
