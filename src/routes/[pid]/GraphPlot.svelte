@@ -72,7 +72,7 @@
     {#each gridHorizontalLines as line}
       <text
         class="grid-label-y"
-        x={30}
+        x={100}
         y={toYForLabel(line.bytes / 1024.0)}
         text-anchor="end"
         dominant-baseline="middle"
@@ -187,11 +187,6 @@
     return graphTranslateX + tenthsOfSecond * graphScaleX;
   }
 
-  function toY(kilobytes: number): number {
-    // Инвертируем Y: kilobytes=0 -> y=низ, kilobytes=max -> y=верх
-    return graphTranslateY + (dataHeight - kilobytes) * graphScaleY;
-  }
-
   // Функция для подписей ординаты: прямое преобразование без инверсии
   // kilobytes=0 -> низ графика (большая координата Y)
   // kilobytes=max -> верх графика (маленькая координата Y)
@@ -218,6 +213,7 @@
 
   // Возможные интервалы для горизонтальных осей в байтах
   const GRID_INTERVALS_BYTES = [
+    100 * 1024, // 100KB
     1024 * 1024, // 1MB
     10 * 1024 * 1024, // 10MB
     100 * 1024 * 1024, // 100MB
@@ -258,9 +254,11 @@
     } else if (bytes >= mb) {
       const mbValue = bytes / mb;
       return `${mbValue.toFixed(mbValue >= 10 ? 0 : 1)}MB`;
-    } else {
+    } else if (bytes >= kb) {
       const kbValue = bytes / kb;
       return `${Math.round(kbValue)}KB`;
+    } else {
+      return `${bytes}B`;
     }
   }
 
@@ -284,17 +282,13 @@
     }
     const minTime = processMinMax.minMoment.getTime();
     const maxTime = processMinMax.maxMoment.getTime();
+    const timeRange = maxTime - minTime;
 
     // Выбираем интервал: максимальное количество осей, но не более 10
     let selectedInterval = GRID_INTERVALS_MS[GRID_INTERVALS_MS.length - 1];
     for (const interval of GRID_INTERVALS_MS) {
-      const firstTick = Math.ceil(minTime / interval) * interval;
-      if (firstTick > maxTime) continue;
-
-      let count = 0;
-      for (let tick = firstTick; tick <= maxTime; tick += interval) {
-        count++;
-      }
+      // деление нацело
+      let count = timeRange / interval;
 
       if (count <= 10) {
         selectedInterval = interval;
@@ -316,7 +310,7 @@
     }
 
     // Генерируем позиции осей
-    const firstTick = Math.ceil(minTime / selectedInterval) * selectedInterval;
+    const firstTick = minTime + selectedInterval;
     const lines: Array<{
       xInDataUnits: number;
       tick: number;
@@ -363,14 +357,8 @@
     let selectedInterval =
       GRID_INTERVALS_BYTES[GRID_INTERVALS_BYTES.length - 1];
     for (const interval of GRID_INTERVALS_BYTES) {
-      const firstTick = Math.ceil(minBytes / interval) * interval;
-      if (firstTick > maxBytes) continue;
-
-      let count = 0;
-      for (let tick = firstTick; tick <= maxBytes; tick += interval) {
-        count++;
-      }
-
+      // деление нацело
+      let count = (maxBytes - minBytes) / interval;
       if (count <= 5) {
         selectedInterval = interval;
         break;
@@ -391,14 +379,14 @@
     }
 
     // Генерируем позиции осей
-    const firstTick = Math.ceil(minBytes / selectedInterval) * selectedInterval;
+    const firstTick = selectedInterval;
     const lines: Array<{
       yInDataUnits: number;
       bytes: number;
       label: string;
     }> = [];
 
-    for (let tick = firstTick; tick <= maxBytes; tick += selectedInterval) {
+    for (let tick = firstTick; tick < maxBytes; tick += selectedInterval) {
       const yInDataUnits = (maxBytes - tick) / 1024.0; // в килобайтах, инвертировано
       const label = formatBytesLabel(tick);
       lines.push({ yInDataUnits, bytes: tick, label });
