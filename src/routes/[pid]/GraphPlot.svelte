@@ -38,13 +38,18 @@
     // чтобы перерисовать график при поступлении новых данных
     graphStore.getProcessMinMax(BigInt(graphVersion * 0) + pid),
   );
+
+  // Минимальный диапазон времени графика в миллисекундах (2 минуты).
+  const MIN_TIME_RANGE = 120 * 1000;
+
   let viewBox = $derived.by(() => {
     if (!processMinMax) {
       return "0 0 1 1";
     }
     const minTime = processMinMax.minMoment.getTime();
     const maxTime = processMinMax.maxMoment.getTime();
-    const timeRange = maxTime - minTime || 1;
+
+    const timeRange = Math.max(maxTime - minTime || 1, MIN_TIME_RANGE);
     const maxBytes = Number(processMinMax.maxBytes) || 1;
     // viewBox: x, y, width, height
     // x = 0, y = 0 (нормализованные координаты)
