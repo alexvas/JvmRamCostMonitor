@@ -24,7 +24,6 @@
     ApplicableMetricsResponse,
   } from "$lib/generated/proto/protocol";
   import { invoke } from "@tauri-apps/api/core";
-  import watch from "$lib/utils.svelte";
 
   let { allMetricTypes, visibleMetrics } = $props();
 
@@ -50,15 +49,21 @@
     const response = await invoke("set_invisible", { request });
   }
 
-  watch<MetricType[]>(
-    () => visibleMetrics,
-    (newVal, oldVal) => {
-      const added = newVal?.filter((m) => !oldVal?.includes(m)) ?? [];
-      const removed = oldVal?.filter((m) => !newVal.includes(m)) ?? [];
-      added.forEach((mt) => setVisible(mt));
-      removed.forEach((mt) => setInvisible(mt));
-    },
-  );
+  let oldVisibleMetrics: MetricType[] | undefined = undefined;
+  $effect(() => {
+    const newVal = visibleMetrics;
+    if (oldVisibleMetrics !== undefined) {
+      const added = (newVal?.filter(
+        (m: MetricType) => !oldVisibleMetrics?.includes(m),
+      ) ?? []) as MetricType[];
+      const removed = (oldVisibleMetrics?.filter(
+        (m: MetricType) => !newVal?.includes(m),
+      ) ?? []) as MetricType[];
+      added.forEach((mt: MetricType) => setVisible(mt));
+      removed.forEach((mt: MetricType) => setInvisible(mt));
+    }
+    oldVisibleMetrics = $state.snapshot(newVal) as MetricType[];
+  });
 </script>
 
 <style>
