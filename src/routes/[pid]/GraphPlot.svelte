@@ -105,8 +105,11 @@
   let frameX = 0;
   let frameY = 0;
 
+  // Отступ для меток
+  let labelOffset = 20000;
+
   // Координата Y для меток (ниже рамки)
-  let labelY = $derived.by(() => frameY + frameHeight + 25);
+  let labelY = $derived.by(() => frameY + frameHeight + labelOffset);
 
   // Отслеживание размеров SVG для вычисления искажения
   $effect(() => {
