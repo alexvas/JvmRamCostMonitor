@@ -27,17 +27,20 @@
   import { getContext } from "svelte";
   import { graphMetaMap } from "$lib/GraphMeta";
   let { pid }: { pid: bigint } = $props();
-  let graphVersion = getContext<() => number>("graphVersion")!();
-  let graphs = $derived(
+  const getGraphVersion = getContext<() => number>("graphVersion")!;
+  let graphVersion = $derived(getGraphVersion());
+  let graphs = $derived.by(() => {
     // используем переменную graphVersion для side-effect,
     // чтобы перерисовать график при поступлении новых данных
-    graphStore.getGraphs(BigInt(graphVersion * 0) + pid),
-  );
-  let processMinMax = $derived(
+    graphVersion; // читаем graphVersion для реактивности
+    return graphStore.getGraphs(pid);
+  });
+  let processMinMax = $derived.by(() => {
     // используем переменную graphVersion для side-effect,
     // чтобы перерисовать график при поступлении новых данных
-    graphStore.getProcessMinMax(BigInt(graphVersion * 0) + pid),
-  );
+    graphVersion; // читаем graphVersion для реактивности
+    return graphStore.getProcessMinMax(pid);
+  });
 
   // Минимальный диапазон времени графика в миллисекундах (2 минуты).
   const MIN_TIME_RANGE = 120 * 1000;
