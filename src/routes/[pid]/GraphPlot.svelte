@@ -21,6 +21,14 @@
         )
         .join(" ")}
     ></path>
+    <path
+      class="grid-lines"
+      d={gridHorizontalLines
+        .map(
+          (line) => `M ${frameX},${line.y} L ${frameX + frameWidth},${line.y}`,
+        )
+        .join(" ")}
+    ></path>
     <g transform={`translate(0, ${labelY})`}>
       <g transform={`scale(1, ${textScaleY})`}>
         {#each gridVerticalLines as line}
@@ -32,6 +40,23 @@
             dominant-baseline="hanging"
             fill={frameColor}
             transform={`translate(${line.x}, 0)`}
+          >
+            {line.label}
+          </text>
+        {/each}
+      </g>
+    </g>
+    <g transform={`translate(${frameX - leftLabelSpace}, 0)`}>
+      <g transform={`scale(1, ${textScaleY})`}>
+        {#each gridHorizontalLines as line}
+          <text
+            class="grid-label"
+            x="0"
+            y="0"
+            text-anchor="end"
+            dominant-baseline="middle"
+            fill={frameColor}
+            transform={`translate(0, ${line.y})`}
           >
             {line.label}
           </text>
@@ -149,8 +174,11 @@
     return (containerWidth * viewBoxHeight) / (containerHeight * viewBoxWidth);
   });
 
+  // Слева отступ для горизонтальных меток (примерно 10000 единиц)
+  const leftLabelSpace = 100;
+
   // viewBox увеличен на 20% с отступами по 10% с каждой стороны
-  // Снизу дополнительный отступ для меток
+  // Снизу дополнительный отступ для меток, слева для горизонтальных меток
   let viewBox = $derived.by(() => {
     if (!processMinMax) {
       return "0 0 1 1";
@@ -158,9 +186,9 @@
     const width = frameWidth;
     const height = frameHeight;
     // Увеличиваем размеры на 20% и смещаем на -10% для отступов
-    const viewBoxX = Math.round(-width * 0.1);
+    const viewBoxX = Math.round(-width * 0.1 - leftLabelSpace);
     const viewBoxY = Math.round(-height * 0.1);
-    const viewBoxWidth = Math.round(width * 1.2);
+    const viewBoxWidth = Math.round(width * 1.2 + leftLabelSpace);
     // Добавляем снизу дополнительное место для меток (примерно 50 единиц = 50KB в системе координат)
     const labelSpace = 50;
     const viewBoxHeight = Math.round(height * 1.2 + labelSpace);
@@ -181,6 +209,16 @@
     4 * 60 * 60 * 1000, // 4 часа
     8 * 60 * 60 * 1000, // 8 часов
     24 * 60 * 60 * 1000, // сутки
+  ];
+
+  // Возможные интервалы для горизонтальных осей в байтах
+  const GRID_INTERVALS_BYTES = [
+    1024 * 1024, // 1MB
+    10 * 1024 * 1024, // 10MB
+    100 * 1024 * 1024, // 100MB
+    1024 * 1024 * 1024, // 1GB
+    10 * 1024 * 1024 * 1024, // 10GB
+    100 * 1024 * 1024 * 1024, // 100GB
   ];
 
   // Функция форматирования времени для меток (относительно начала графика)
@@ -204,6 +242,27 @@
     } else {
       // Интервалы час и больше - показываем часы
       return `${hours}h`;
+    }
+  }
+
+  // Функция форматирования байт для меток
+  function formatBytesLabel(bytes: number): string {
+    const kb = 1024;
+    const mb = 1024 * 1024;
+    const gb = 1024 * 1024 * 1024;
+
+    if (bytes >= gb) {
+      // Гигабайты
+      const gbValue = bytes / gb;
+      return `${gbValue.toFixed(gbValue >= 10 ? 0 : 1)}GB`;
+    } else if (bytes >= mb) {
+      // Мегабайты
+      const mbValue = bytes / mb;
+      return `${mbValue.toFixed(mbValue >= 10 ? 0 : 1)}MB`;
+    } else {
+      // Килобайты
+      const kbValue = bytes / kb;
+      return `${Math.round(kbValue)}KB`;
     }
   }
 
@@ -274,6 +333,82 @@
     cachedMinTime = minTime;
     cachedMaxTime = maxTime;
     cachedInterval = selectedInterval;
+
+    return lines;
+  });
+
+  // Мемоизация для gridHorizontalLines
+  let cachedHorizontalLines: Array<{
+    y: number;
+    bytes: number;
+    label: string;
+  }> = [];
+  let cachedMinBytes: number | null = null;
+  let cachedMaxBytes: number | null = null;
+  let cachedBytesInterval: number | null = null;
+
+  // Вычисление позиций горизонтальных осей
+  let gridHorizontalLines = $derived.by(() => {
+    if (!processMinMax) {
+      cachedHorizontalLines = [];
+      cachedMinBytes = null;
+      cachedMaxBytes = null;
+      return [];
+    }
+    const maxBytes = Number(processMinMax.maxBytes);
+    const minBytes = 0; // Всегда начинаем с 0
+
+    // Выбираем интервал: максимальное количество осей, но не более 5
+    let selectedInterval =
+      GRID_INTERVALS_BYTES[GRID_INTERVALS_BYTES.length - 1];
+    for (const interval of GRID_INTERVALS_BYTES) {
+      // Вычисляем количество осей для данного интервала
+      // Находим первое значение, кратное интервалу, которое >= minBytes
+      const firstTick = Math.ceil(minBytes / interval) * interval;
+      if (firstTick > maxBytes) continue; // интервал слишком большой
+
+      // Считаем количество осей
+      let count = 0;
+      for (let tick = firstTick; tick <= maxBytes; tick += interval) {
+        count++;
+      }
+
+      if (count <= 5) {
+        selectedInterval = interval;
+        break;
+      }
+    }
+
+    // Если диапазон байт и интервал не изменились, возвращаем кэшированный результат
+    if (
+      cachedMinBytes === minBytes &&
+      cachedMaxBytes === maxBytes &&
+      cachedBytesInterval === selectedInterval &&
+      cachedHorizontalLines.length > 0
+    ) {
+      // Обновляем только координаты y, если maxBytes изменился (но диапазон тот же)
+      return cachedHorizontalLines.map((line) => ({
+        ...line,
+        y: Math.round((maxBytes - line.bytes) / 1024.0),
+      }));
+    }
+
+    // Генерируем позиции осей
+    const firstTick = Math.ceil(minBytes / selectedInterval) * selectedInterval;
+    const lines: Array<{ y: number; bytes: number; label: string }> = [];
+
+    for (let tick = firstTick; tick <= maxBytes; tick += selectedInterval) {
+      // Координата y: инвертируем (bytes=0 -> y=maxKB, bytes=maxBytes -> y=0)
+      const y = Math.round((maxBytes - tick) / 1024.0);
+      const label = formatBytesLabel(tick);
+      lines.push({ y, bytes: tick, label });
+    }
+
+    // Кэшируем результат
+    cachedHorizontalLines = lines;
+    cachedMinBytes = minBytes;
+    cachedMaxBytes = maxBytes;
+    cachedBytesInterval = selectedInterval;
 
     return lines;
   });
