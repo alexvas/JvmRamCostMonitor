@@ -3,7 +3,9 @@
 {:else}
   <h2>{pidStr} {process.display_name}</h2>
   {#if pid}
-    <GraphPlot {pid} />
+    <div class="graph-container">
+      <GraphPlot {pid} />
+    </div>
   {/if}
 {/if}
 
@@ -20,3 +22,11 @@
   let availableJvmProcesses = $derived(getAvailableJvmProcesses());
   let process = $derived(pid ? availableJvmProcesses.get(pid) : undefined);
 </script>
+
+<style>
+  .graph-container {
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+  }
+</style>
