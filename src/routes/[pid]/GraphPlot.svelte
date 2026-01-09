@@ -8,6 +8,17 @@
       width={frameWidth}
       height={frameHeight}
     ></rect>
+    {#if gridVerticalLines.length > 0}
+      <path
+        class="grid-lines"
+        d={gridVerticalLines
+          .map(
+            (line) =>
+              `M ${line.x},${frameY} L ${line.x},${frameY + frameHeight}`,
+          )
+          .join(" ")}
+      ></path>
+    {/if}
     {#each graphs as graph (graph.metricType)}
       <path
         class="graph-path graph-path-{MetricType[graph.metricType]}"
@@ -87,6 +98,84 @@
   });
   let prefersDark = getContext<() => boolean>("prefersDark")!();
   let frameColor = prefersDark ? "white" : "black";
+
+  // Возможные интервалы для вертикальных осей в миллисекундах
+  const GRID_INTERVALS_MS = [
+    30 * 1000, // 30 секунд
+    60 * 1000, // 1 минута
+    5 * 60 * 1000, // 5 минут
+    10 * 60 * 1000, // 10 минут
+    30 * 60 * 1000, // 30 минут
+    60 * 60 * 1000, // 1 час
+    2 * 60 * 60 * 1000, // 2 часа
+    4 * 60 * 60 * 1000, // 4 часа
+    8 * 60 * 60 * 1000, // 8 часов
+    24 * 60 * 60 * 1000, // сутки
+  ];
+
+  // Мемоизация для gridVerticalLines
+  let cachedGridLines: Array<{ x: number; tick: number }> = [];
+  let cachedMinTime: number | null = null;
+  let cachedMaxTime: number | null = null;
+
+  // Вычисление позиций вертикальных осей
+  let gridVerticalLines = $derived.by(() => {
+    if (!processMinMax) {
+      cachedGridLines = [];
+      cachedMinTime = null;
+      cachedMaxTime = null;
+      return [];
+    }
+    const minTime = processMinMax.minMoment.getTime();
+    const maxTime = processMinMax.maxMoment.getTime();
+
+    // Если временной диапазон не изменился, возвращаем кэшированный результат
+    if (
+      cachedMinTime === minTime &&
+      cachedMaxTime === maxTime &&
+      cachedGridLines.length > 0
+    ) {
+      return cachedGridLines;
+    }
+
+    // Выбираем интервал: максимальное количество осей, но не более 10
+    let selectedInterval = GRID_INTERVALS_MS[GRID_INTERVALS_MS.length - 1];
+    for (const interval of GRID_INTERVALS_MS) {
+      // Вычисляем количество осей для данного интервала
+      // Находим первое время, кратное интервалу, которое >= minTime
+      const firstTick = Math.ceil(minTime / interval) * interval;
+      if (firstTick > maxTime) continue; // интервал слишком большой
+
+      // Считаем количество осей
+      let count = 0;
+      for (let tick = firstTick; tick <= maxTime; tick += interval) {
+        count++;
+      }
+
+      if (count <= 10) {
+        selectedInterval = interval;
+        break;
+      }
+    }
+
+    // Генерируем позиции осей
+    const firstTick = Math.ceil(minTime / selectedInterval) * selectedInterval;
+    const lines: Array<{ x: number; tick: number }> = [];
+
+    for (let tick = firstTick; tick < maxTime; tick += selectedInterval) {
+      // Координата x: вычитаем минимальное время, делим на 100 (десятые доли секунды)
+      const x = Math.round((tick - minTime) / 100.0);
+      lines.push({ x, tick });
+    }
+
+    // Кэшируем результат
+    cachedGridLines = lines;
+    cachedMinTime = minTime;
+    cachedMaxTime = maxTime;
+
+    return lines;
+  });
+
   let dynamicStyles = $derived.by(() => {
     const baseStyles = /*css*/ `
       .graph-plot {
@@ -108,6 +197,13 @@
         stroke-width: 0.5;
         vector-effect: non-scaling-stroke;
         opacity: 0.5;
+      }
+      .grid-lines {
+        stroke: ${frameColor};
+        stroke-width: 0.3;
+        vector-effect: non-scaling-stroke;
+        opacity: 0.3;
+        fill: none;
       }
     `;
     const graphColor = prefersDark ? "color_dark" : "color_light";
