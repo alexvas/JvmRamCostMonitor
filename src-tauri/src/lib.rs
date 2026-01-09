@@ -43,7 +43,7 @@ impl serde::Serialize for Error {
 }
 
 const LOCALHOST_V4: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-const GRPC_SERVER_PORT: u16 = 53333;
+const GRPC_SERVER_PORT: u16 = 53535;
 
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -101,7 +101,9 @@ async fn get_client(state: &State<'_, Arc<AppState>>) -> AppBackendClient<Channe
 use Jmvram::ApplicableMetricsResponse;
 
 #[tauri::command]
-async fn get_applicable_metrics(state: State<'_, Arc<AppState>>) -> Result<ApplicableMetricsResponse, Error> {
+async fn get_applicable_metrics(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ApplicableMetricsResponse, Error> {
     let mut client = get_client(&state).await;
     let response = client.get_applicable_metrics(Empty::default()).await?;
     Ok(response.into_inner())
@@ -139,12 +141,6 @@ async fn set_following_pids(
 
 use tauri::{AppHandle, Emitter};
 
-#[tauri::command]
-fn available_jvm_processes_updated(app: AppHandle, proc_infos: Vec<Jmvram::ProcInfo>) {
-    app.emit("available-jvm-processes-updated", &proc_infos)
-        .unwrap();
-}
-
 use crate::google::protobuf::Empty;
 
 async fn listen_available_jvm_processes_updated(
@@ -157,7 +153,24 @@ async fn listen_available_jvm_processes_updated(
 
     while let Some(response) = stream.message().await? {
         // println!("listen_jvm_process_list message: {:?}", response);
-        available_jvm_processes_updated(app.clone(), response.infos);
+        let infos = response.infos;
+        app.emit("available-jvm-processes-updated", &infos).unwrap();
+    }
+
+    Ok(())
+}
+
+async fn listen_graph_queues(
+    app: AppHandle,
+    state: Arc<AppState>,
+) -> Result<(), Error> {
+    let mut client: AppBackendClient<Channel> = state.get_client().await;
+    let response = client.listen_graph_queues(Empty::default()).await?;
+    let mut stream = response.into_inner();
+
+    while let Some(response) = stream.message().await? {
+        // println!("listen_graph_queues message: {:?}", response);
+        app.emit("graph-queues-updated", &response).unwrap();
     }
 
     Ok(())
@@ -171,11 +184,18 @@ pub fn run() {
         .setup(|app| {
             let state = Arc::new(AppState::new());
             app.manage(state.clone());
+            let state2 = state.clone();
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = listen_available_jvm_processes_updated(app_handle, state).await {
                     eprintln!("Error in listen_available_jvm_processes_updated: {}", e);
+                }
+            });
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = listen_graph_queues(app_handle, state2).await {
+                    eprintln!("Error in listen_graph_queues: {}", e);
                 }
             });
 

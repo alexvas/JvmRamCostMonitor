@@ -6,6 +6,7 @@ import jvmram.conf.Config;
 import jvmram.controller.GraphController;
 import jvmram.controller.JmxService;
 import jvmram.controller.ProcessController;
+import jvmram.model.graph.GraphKey;
 import jvmram.model.graph.GraphPointQueues;
 import jvmram.model.metrics.MetricType;
 import jvmram.proto.*;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
+import static java.util.stream.Collectors.groupingBy;
 import static jvmram.backend.Converter.convert2Grpc;
 
 class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
@@ -57,13 +59,19 @@ class JvmRamBackendImpl extends AppBackendGrpc.AppBackendImplBase {
     @Override
     public void listenGraphQueues(Empty request, StreamObserver<GraphQueues> responseObserver) {
         graphController.addRenderer(() -> {
-            var keys = queues.keys();
-            var resp = GraphQueues.newBuilder().addAllQueues(
-                    keys.stream()
-                            .map(k -> convert2Grpc(k, queues.getPoints(k)))
-                            .toList()
-            ).build();
-            responseObserver.onNext(resp);
+            queues.keys()
+                    .stream()
+                    .collect(groupingBy(GraphKey::pid))
+                    .forEach((pid, keys) -> {
+                        var resp = GraphQueues.newBuilder()
+                                .setPid(pid)
+                                .addAllQueues(
+                                        keys.stream()
+                                                .map(k -> convert2Grpc(k, queues.getPoints(k)))
+                                                .toList()
+                                ).build();
+                        responseObserver.onNext(resp);
+                    });
         });
     }
 

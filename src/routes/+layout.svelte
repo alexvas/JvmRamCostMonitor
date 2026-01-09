@@ -1,7 +1,7 @@
 <script lang="ts">
   import { setContext } from 'svelte';
   import { page } from '$app/stores';
-  import { ProcInfo } from '$lib/generated/proto/protocol';
+  import { ProcInfo, GraphQueues, GraphPoint, MetricType } from '$lib/generated/proto/protocol';
   import { invoke } from '@tauri-apps/api/core';
 
   let { children } = $props();
@@ -26,6 +26,20 @@
       return [pid, proc];
     }));
   });
+
+  let graphPointQueues = $state<Map<bigint, Map<MetricType, GraphPoint[]>>>(new Map());
+  setContext('graphPointQueues', () => graphPointQueues);
+
+  listen<{payload: GraphQueues}>('graph-queues-updated', (event) => {
+    const pid = typeof event.payload.pid === 'bigint' ? event.payload.pid : BigInt(event.payload.pid);
+    const queues = event.payload.queues;
+    const metricType2Points = new Map(queues.map(queue => {
+      const metricType = queue.metric_type;
+      const points = queue.points;
+      return [metricType, points];
+    }));
+    graphPointQueues.set(pid, metricType2Points);
+  })
 
   function isActive(href: string): boolean {
     const currentPath = $page.url.pathname;

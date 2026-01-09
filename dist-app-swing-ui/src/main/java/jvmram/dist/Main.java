@@ -10,7 +10,7 @@ import java.lang.invoke.MethodHandles;
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int DEFAULT_PORT = 53333;
+    private static final int DEFAULT_PORT = 53535;
 
     void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));

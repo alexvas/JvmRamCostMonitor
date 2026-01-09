@@ -18,7 +18,7 @@ public class JvmRunCost {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
         var main = new JvmRunCost();
-        main.setup(53333);
+        main.setup(53535);
         main.blockUntilShutdown();
     }
 
