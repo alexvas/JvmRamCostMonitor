@@ -42,32 +42,28 @@
 
   import { listen } from "@tauri-apps/api/event";
 
-  listen<{ payload: JvmProcessListResponse }>(
-    "available-jvm-processes-updated",
-    (event) => {
-      const sortedProcesses = [...event.payload.infos].sort((a, b) => {
-        const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
-        const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
-        if (pidA < pidB) return -1;
-        if (pidA > pidB) return 1;
-        return 0;
-      });
-      availableJvmProcesses = new Map(
-        sortedProcesses.map((proc) => {
-          const pid =
-            typeof proc.pid === "bigint" ? proc.pid : BigInt(proc.pid);
-          return [pid, proc];
-        }),
-      );
-    },
-  );
+  listen<JvmProcessListResponse>("available-jvm-processes-updated", (event) => {
+    const sortedProcesses = [...event.payload.infos].sort((a, b) => {
+      const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
+      const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
+      if (pidA < pidB) return -1;
+      if (pidA > pidB) return 1;
+      return 0;
+    });
+    availableJvmProcesses = new Map(
+      sortedProcesses.map((proc) => {
+        const pid = typeof proc.pid === "bigint" ? proc.pid : BigInt(proc.pid);
+        return [pid, proc];
+      }),
+    );
+  });
 
   let graphPointQueues = $state<Map<bigint, Map<MetricType, GraphPoint[]>>>(
     new Map(),
   );
   setContext("graphPointQueues", () => graphPointQueues);
 
-  listen<{ payload: GraphQueues }>("graph-queues-updated", (event) => {
+  listen<GraphQueues>("graph-queues-updated", (event) => {
     const pid =
       typeof event.payload.pid === "bigint"
         ? event.payload.pid
