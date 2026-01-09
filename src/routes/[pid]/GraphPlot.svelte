@@ -1,4 +1,12 @@
 <svg class="graph-plot" {viewBox} preserveAspectRatio="none">
+  <style>
+    .graph-path {
+      stroke: red;
+      fill: none;
+      stroke-width: 0.7;
+      vector-effect: non-scaling-stroke;
+    }
+  </style>
   {#if graphs && processMinMax}
     {#each graphs as graph (graph.metricType)}
       <path
@@ -58,11 +66,5 @@
     display: block;
     max-height: 100%;
     overflow: hidden;
-  }
-  .graph-path {
-    fill: none;
-    stroke: red;
-    stroke-width: 0.7;
-    vector-effect: non-scaling-stroke;
   }
 </style>
