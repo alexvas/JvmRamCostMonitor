@@ -1,4 +1,9 @@
-<svg class="graph-plot" {viewBox} preserveAspectRatio="none">
+<svg
+  class="graph-plot"
+  bind:this={svgElement}
+  {viewBox}
+  preserveAspectRatio="none"
+>
   {@html dynamicStyles}
   {#if graphs && processMinMax}
     <rect
@@ -8,17 +13,31 @@
       width={frameWidth}
       height={frameHeight}
     ></rect>
-    {#if gridVerticalLines.length > 0}
-      <path
-        class="grid-lines"
-        d={gridVerticalLines
-          .map(
-            (line) =>
-              `M ${line.x},${frameY} L ${line.x},${frameY + frameHeight}`,
-          )
-          .join(" ")}
-      ></path>
-    {/if}
+    <path
+      class="grid-lines"
+      d={gridVerticalLines
+        .map(
+          (line) => `M ${line.x},${frameY} L ${line.x},${frameY + frameHeight}`,
+        )
+        .join(" ")}
+    ></path>
+    <g transform={`translate(0, ${labelY})`}>
+      <g transform={`scale(1, ${textScaleY})`}>
+        {#each gridVerticalLines as line}
+          <text
+            class="grid-label"
+            x="0"
+            y="0"
+            text-anchor="middle"
+            dominant-baseline="hanging"
+            fill={frameColor}
+            transform={`translate(${line.x}, 0)`}
+          >
+            {line.label}
+          </text>
+        {/each}
+      </g>
+    </g>
     {#each graphs as graph (graph.metricType)}
       <path
         class="graph-path graph-path-{MetricType[graph.metricType]}"
@@ -45,6 +64,10 @@
   import { getContext } from "svelte";
   import { graphMetaMap } from "$lib/GraphMeta";
   let { pid }: { pid: bigint } = $props();
+  let svgElement: SVGElement | null = $state(null);
+  let svgAspectRatio = $state(1);
+  let containerWidth = $state(1);
+  let containerHeight = $state(1);
   const getGraphVersion = getContext<() => number>("graphVersion")!;
   let graphVersion = $derived(getGraphVersion());
   let graphs = $derived.by(() => {
@@ -82,7 +105,49 @@
   let frameX = 0;
   let frameY = 0;
 
+  // Координата Y для меток (ниже рамки)
+  let labelY = $derived.by(() => frameY + frameHeight + 25);
+
+  // Отслеживание размеров SVG для вычисления искажения
+  $effect(() => {
+    const element = svgElement;
+    if (!element || typeof window === "undefined") return;
+    const updateSizes = () => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        containerWidth = rect.width;
+        containerHeight = rect.height;
+        svgAspectRatio = rect.height / rect.width;
+      }
+    };
+    updateSizes();
+    const resizeObserver = new ResizeObserver(updateSizes);
+    resizeObserver.observe(element);
+    return () => resizeObserver.disconnect();
+  });
+
+  // Коэффициент масштабирования для компенсации искажения текста
+  // из-за preserveAspectRatio="none"
+  // При preserveAspectRatio="none" SVG растягивается на контейнер:
+  // - Горизонтальный масштаб: containerWidth / viewBoxWidth
+  // - Вертикальный масштаб: containerHeight / viewBoxHeight
+  // Чтобы текст не сплющивался, нужно компенсировать разницу масштабов:
+  // scaleY = (containerWidth / viewBoxWidth) / (containerHeight / viewBoxHeight)
+  //        = (containerWidth * viewBoxHeight) / (containerHeight * viewBoxWidth)
+  let textScaleY = $derived.by(() => {
+    if (!processMinMax || containerWidth === 0 || containerHeight === 0)
+      return 1;
+    const width = frameWidth;
+    const height = frameHeight;
+    const viewBoxWidth = width * 1.2;
+    const labelSpace = 50;
+    const viewBoxHeight = height * 1.2 + labelSpace;
+    // Используем абсолютные размеры для точного расчета
+    return (containerWidth * viewBoxHeight) / (containerHeight * viewBoxWidth);
+  });
+
   // viewBox увеличен на 20% с отступами по 10% с каждой стороны
+  // Снизу дополнительный отступ для меток
   let viewBox = $derived.by(() => {
     if (!processMinMax) {
       return "0 0 1 1";
@@ -93,7 +158,9 @@
     const viewBoxX = Math.round(-width * 0.1);
     const viewBoxY = Math.round(-height * 0.1);
     const viewBoxWidth = Math.round(width * 1.2);
-    const viewBoxHeight = Math.round(height * 1.2);
+    // Добавляем снизу дополнительное место для меток (примерно 50 единиц = 50KB в системе координат)
+    const labelSpace = 50;
+    const viewBoxHeight = Math.round(height * 1.2 + labelSpace);
     return `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
   });
   let prefersDark = getContext<() => boolean>("prefersDark")!();
@@ -113,10 +180,35 @@
     24 * 60 * 60 * 1000, // сутки
   ];
 
+  // Функция форматирования времени для меток (относительно начала графика)
+  function formatTimeLabel(
+    tick: number,
+    minTime: number,
+    interval: number,
+  ): string {
+    // Вычисляем относительное время от начала графика
+    const relativeMs = tick - minTime;
+    const seconds = Math.floor(relativeMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (interval < 60 * 1000) {
+      // Интервалы меньше минуты - показываем секунды
+      return `${seconds}s`;
+    } else if (interval < 60 * 60 * 1000) {
+      // Интервалы меньше часа - показываем минуты
+      return `${minutes}m`;
+    } else {
+      // Интервалы час и больше - показываем часы
+      return `${hours}h`;
+    }
+  }
+
   // Мемоизация для gridVerticalLines
-  let cachedGridLines: Array<{ x: number; tick: number }> = [];
+  let cachedGridLines: Array<{ x: number; tick: number; label: string }> = [];
   let cachedMinTime: number | null = null;
   let cachedMaxTime: number | null = null;
+  let cachedInterval: number | null = null;
 
   // Вычисление позиций вертикальных осей
   let gridVerticalLines = $derived.by(() => {
@@ -128,15 +220,6 @@
     }
     const minTime = processMinMax.minMoment.getTime();
     const maxTime = processMinMax.maxMoment.getTime();
-
-    // Если временной диапазон не изменился, возвращаем кэшированный результат
-    if (
-      cachedMinTime === minTime &&
-      cachedMaxTime === maxTime &&
-      cachedGridLines.length > 0
-    ) {
-      return cachedGridLines;
-    }
 
     // Выбираем интервал: максимальное количество осей, но не более 10
     let selectedInterval = GRID_INTERVALS_MS[GRID_INTERVALS_MS.length - 1];
@@ -158,20 +241,36 @@
       }
     }
 
+    // Если временной диапазон и интервал не изменились, возвращаем кэшированный результат
+    if (
+      cachedMinTime === minTime &&
+      cachedMaxTime === maxTime &&
+      cachedInterval === selectedInterval &&
+      cachedGridLines.length > 0
+    ) {
+      // Обновляем только координаты x, если minTime изменился (но диапазон тот же)
+      return cachedGridLines.map((line) => ({
+        ...line,
+        x: Math.round((line.tick - minTime) / 100.0),
+      }));
+    }
+
     // Генерируем позиции осей
     const firstTick = Math.ceil(minTime / selectedInterval) * selectedInterval;
-    const lines: Array<{ x: number; tick: number }> = [];
+    const lines: Array<{ x: number; tick: number; label: string }> = [];
 
     for (let tick = firstTick; tick < maxTime; tick += selectedInterval) {
       // Координата x: вычитаем минимальное время, делим на 100 (десятые доли секунды)
       const x = Math.round((tick - minTime) / 100.0);
-      lines.push({ x, tick });
+      const label = formatTimeLabel(tick, minTime, selectedInterval);
+      lines.push({ x, tick, label });
     }
 
     // Кэшируем результат
     cachedGridLines = lines;
     cachedMinTime = minTime;
     cachedMaxTime = maxTime;
+    cachedInterval = selectedInterval;
 
     return lines;
   });
@@ -204,6 +303,15 @@
         vector-effect: non-scaling-stroke;
         opacity: 0.3;
         fill: none;
+      }
+      .grid-label {
+        fill: ${frameColor};
+        font-size: 250px;
+        opacity: 1;
+        font-family: sans-serif;
+        font-weight: normal;
+        pointer-events: none;
+        transform-origin: center top;
       }
     `;
     const graphColor = prefersDark ? "color_dark" : "color_light";
