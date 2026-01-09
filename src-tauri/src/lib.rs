@@ -153,8 +153,7 @@ async fn listen_available_jvm_processes_updated(
 
     while let Some(response) = stream.message().await? {
         // println!("listen_jvm_process_list message: {:?}", response);
-        let infos = response.infos;
-        app.emit("available-jvm-processes-updated", &infos).unwrap();
+        app.emit("available-jvm-processes-updated", &response).unwrap();
     }
 
     Ok(())

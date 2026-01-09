@@ -1,7 +1,13 @@
 <script lang="ts">
   import { setContext } from 'svelte';
   import { page } from '$app/stores';
-  import { ProcInfo, GraphQueues, GraphPoint, MetricType } from '$lib/generated/proto/protocol';
+  import { 
+    ProcInfo, 
+    GraphQueues,
+    GraphPoint, 
+    MetricType, 
+    JvmProcessListResponse,
+  } from '$lib/generated/proto/protocol';
   import { invoke } from '@tauri-apps/api/core';
 
   let { children } = $props();
@@ -13,8 +19,8 @@
 
   import { listen } from '@tauri-apps/api/event';
 
-  listen<{payload: ProcInfo[]}>('available-jvm-processes-updated', (event) => {
-    const sortedProcesses = [...event.payload].sort((a, b) => {
+  listen<{payload: JvmProcessListResponse}>('available-jvm-processes-updated', (event) => {
+    const sortedProcesses = [...event.payload.infos].sort((a, b) => {
       const pidA = typeof a.pid === 'bigint' ? a.pid : BigInt(a.pid);
       const pidB = typeof b.pid === 'bigint' ? b.pid : BigInt(b.pid);
       if (pidA < pidB) return -1;
