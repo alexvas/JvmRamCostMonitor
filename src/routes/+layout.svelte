@@ -1,80 +1,96 @@
+<div>
+  <h1>JVM RAM Cost</h1>
+  <nav class="tabs-nav">
+    <ul class="tabs-list">
+      <li>
+        <a href="/" class="tab-link" class:active={isActive("/")}>Settings</a>
+      </li>
+      {#each followingPids as pid}
+        <li>
+          <a
+            href={`/${pid}`}
+            class="tab-link"
+            class:active={isActive(`/${pid}`)}>{pid}</a
+          >
+        </li>
+      {/each}
+    </ul>
+  </nav>
+  <main class="container">
+    {@render children()}
+  </main>
+</div>
+
 <script lang="ts">
-  import { setContext } from 'svelte';
-  import { page } from '$app/stores';
-  import { 
-    ProcInfo, 
+  import { setContext } from "svelte";
+  import { page } from "$app/state";
+  import {
+    ProcInfo,
     GraphQueues,
-    GraphPoint, 
-    MetricType, 
+    GraphPoint,
+    MetricType,
     JvmProcessListResponse,
-  } from '$lib/generated/proto/protocol';
-  import { invoke } from '@tauri-apps/api/core';
+  } from "$lib/generated/proto/protocol";
+  import { invoke } from "@tauri-apps/api/core";
 
   let { children } = $props();
   let followingPids = $state<bigint[]>([]);
   let availableJvmProcesses = $state<Map<bigint, ProcInfo>>(new Map());
 
-  setContext('followingPids', () => followingPids);
-  setContext('availableJvmProcesses', () => availableJvmProcesses);
+  setContext("followingPids", () => followingPids);
+  setContext("availableJvmProcesses", () => availableJvmProcesses);
 
-  import { listen } from '@tauri-apps/api/event';
+  import { listen } from "@tauri-apps/api/event";
 
-  listen<{payload: JvmProcessListResponse}>('available-jvm-processes-updated', (event) => {
-    const sortedProcesses = [...event.payload.infos].sort((a, b) => {
-      const pidA = typeof a.pid === 'bigint' ? a.pid : BigInt(a.pid);
-      const pidB = typeof b.pid === 'bigint' ? b.pid : BigInt(b.pid);
-      if (pidA < pidB) return -1;
-      if (pidA > pidB) return 1;
-      return 0;
-    });
-    availableJvmProcesses = new Map(sortedProcesses.map(proc => {
-      const pid = typeof proc.pid === 'bigint' ? proc.pid : BigInt(proc.pid);
-      return [pid, proc];
-    }));
+  listen<{ payload: JvmProcessListResponse }>(
+    "available-jvm-processes-updated",
+    (event) => {
+      const sortedProcesses = [...event.payload.infos].sort((a, b) => {
+        const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
+        const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
+        if (pidA < pidB) return -1;
+        if (pidA > pidB) return 1;
+        return 0;
+      });
+      availableJvmProcesses = new Map(
+        sortedProcesses.map((proc) => {
+          const pid =
+            typeof proc.pid === "bigint" ? proc.pid : BigInt(proc.pid);
+          return [pid, proc];
+        }),
+      );
+    },
+  );
+
+  let graphPointQueues = $state<Map<bigint, Map<MetricType, GraphPoint[]>>>(
+    new Map(),
+  );
+  setContext("graphPointQueues", () => graphPointQueues);
+
+  listen<{ payload: GraphQueues }>("graph-queues-updated", (event) => {
+    const pid =
+      typeof event.payload.pid === "bigint"
+        ? event.payload.pid
+        : BigInt(event.payload.pid);
+    const queues = event.payload.queues;
+    const metricType2Points = new Map(
+      queues.map((queue) => {
+        const metricType = queue.metric_type;
+        const points = queue.points;
+        return [metricType, points];
+      }),
+    );
+    graphPointQueues.set(pid, metricType2Points);
   });
 
-  let graphPointQueues = $state<Map<bigint, Map<MetricType, GraphPoint[]>>>(new Map());
-  setContext('graphPointQueues', () => graphPointQueues);
-
-  listen<{payload: GraphQueues}>('graph-queues-updated', (event) => {
-    const pid = typeof event.payload.pid === 'bigint' ? event.payload.pid : BigInt(event.payload.pid);
-    const queues = event.payload.queues;
-    const metricType2Points = new Map(queues.map(queue => {
-      const metricType = queue.metric_type;
-      const points = queue.points;
-      return [metricType, points];
-    }));
-    graphPointQueues.set(pid, metricType2Points);
-  })
-
   function isActive(href: string): boolean {
-    const currentPath = $page.url.pathname;
-    if (href === '/') {
-      return currentPath === '/';
+    const currentPath = page.url.pathname;
+    if (href === "/") {
+      return currentPath === "/";
     }
     return currentPath === href;
   }
-
 </script>
-
-<div>
-<h1>JVM RAM Cost</h1>
-<nav class="tabs-nav">
-  <ul class="tabs-list">
-    <li>
-      <a href="/" class="tab-link" class:active={isActive('/')}>Settings</a>
-    </li>
-    {#each followingPids as pid}
-      <li>
-        <a href={`/${pid}`} class="tab-link" class:active={isActive(`/${pid}`)}>{pid}</a>
-      </li>
-    {/each}
-  </ul>
-</nav>
-<main class="container">
-  {@render children()}
-</main>
-</div>
 
 <style>
   .tabs-nav {
@@ -104,7 +120,9 @@
     text-decoration: none;
     color: #202020;
     border-bottom: 2px solid transparent;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
     font-size: 14px;
     line-height: 20px;
     cursor: pointer;
