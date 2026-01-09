@@ -23,6 +23,8 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tauri-apps/cli": "^2",
     "corepack": "^0.34.5",
+    "prettier": "^3.7.4",
+    "prettier-plugin-svelte": "^3.4.1",
     "protoc": "^33.2.0",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
