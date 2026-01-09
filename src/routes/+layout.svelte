@@ -27,11 +27,8 @@
   import {
     ProcInfo,
     GraphQueues,
-    GraphPoint,
-    MetricType,
     JvmProcessListResponse,
   } from "$lib/generated/proto/protocol";
-  import { invoke } from "@tauri-apps/api/core";
 
   let { children } = $props();
   let followingPids = $state<bigint[]>([]);
@@ -58,10 +55,9 @@
     );
   });
 
-  let graphPointQueues = $state<Map<bigint, Map<MetricType, GraphPoint[]>>>(
-    new Map(),
-  );
-  setContext("graphPointQueues", () => graphPointQueues);
+  let graphVersion = $state(0);
+  setContext("graphVersion", () => graphVersion);
+  import { graphStore } from "$lib/GraphStore";
 
   listen<GraphQueues>("graph-queues-updated", (event) => {
     const pid =
@@ -69,14 +65,11 @@
         ? event.payload.pid
         : BigInt(event.payload.pid);
     const queues = event.payload.queues;
-    const metricType2Points = new Map(
-      queues.map((queue) => {
-        const metricType = queue.metric_type;
-        const points = queue.points;
-        return [metricType, points];
-      }),
-    );
-    graphPointQueues.set(pid, metricType2Points);
+    for (const queue of queues) {
+      graphStore.put(pid, queue.metric_type, queue.points);
+    }
+    // Чтобы графики перерисовывались
+    graphVersion++;
   });
 
   function isActive(href: string): boolean {
