@@ -68,8 +68,8 @@
   });
 
   // Координаты рамки (исходные координаты графика)
-  let frameX = $derived(0);
-  let frameY = $derived(0);
+  let frameX = 0;
+  let frameY = 0;
 
   // viewBox увеличен на 20% с отступами по 10% с каждой стороны
   let viewBox = $derived.by(() => {
@@ -85,6 +85,8 @@
     const viewBoxHeight = Math.round(height * 1.2);
     return `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
   });
+  let prefersDark = getContext<() => boolean>("prefersDark")!();
+  let frameColor = prefersDark ? "white" : "black";
   let dynamicStyles = $derived.by(() => {
     const baseStyles = `
       .graph-path {
@@ -94,13 +96,12 @@
       }
       .graph-frame {
         fill: none;
-        stroke: white;
+        stroke: ${frameColor};
         stroke-width: 0.5;
         vector-effect: non-scaling-stroke;
-        opacity: 0.3;
+        opacity: 0.5;
       }
     `;
-    let prefersDark = getContext<() => boolean>("prefersDark")!();
     const graphColor = prefersDark ? "color_dark" : "color_light";
     const metricStyles = Object.keys(graphMetaMap)
       .map((metricTypeKey) => {
