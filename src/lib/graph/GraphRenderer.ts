@@ -336,7 +336,6 @@ export class GraphRenderer {
             const y = lastPoint.kb;
             const label = formatBytesLabel(y, 2);
             const metricType = graph.metricType;
-            const metricTypeName = this.metricNames[metricType] || `Metric${metricType}`;
             const metricColorMeta = this.metricColors[metricType];
             const metricColor = metricColorMeta[this.config.prefersDark ? 'color_dark' : 'color_light'];
             lines.push(/*svg*/`<square x="${xStart}" y="${y}" width="10" height="10" fill="${metricColor}"/>`);
