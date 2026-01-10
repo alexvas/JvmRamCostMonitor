@@ -136,6 +136,8 @@
     text-decoration: none;
     color: #202020;
     border-bottom: 2px solid transparent;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
     transition:
       background-color 0.15s ease,
       border-color 0.15s ease;
