@@ -84,6 +84,7 @@
 
 <script lang="ts">
   import { type GraphPoint, graphStore, MetricType } from "$lib/GraphStore";
+  import { Debouncer } from "$lib/Debouncer";
   import { getContext } from "svelte";
   import { graphMetaMap } from "$lib/GraphMeta";
   let { pid }: { pid: bigint } = $props();
@@ -107,37 +108,19 @@
     const element = svgElement;
     if (!element || typeof window === "undefined") return;
 
-    let pendingUpdateCounter = 0;
-    const DEBOUNCE_DELAY_MS = 16; // примерно один кадр
-
-    const updateSizes = () => {
+    const updateSizes = new Debouncer(() => {
       const rect = element.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         containerWidth = rect.width;
         containerHeight = rect.height;
       }
-    };
+    });
 
     // Первоначальное обновление через debounce механизм
-    pendingUpdateCounter++;
-    setTimeout(() => {
-      pendingUpdateCounter--;
-      if (pendingUpdateCounter <= 0) {
-        updateSizes();
-      }
-    }, DEBOUNCE_DELAY_MS);
+    updateSizes.debounce();
 
     const resizeObserver = new ResizeObserver(() => {
-      pendingUpdateCounter++; // инкрементируем счетчик при каждом событии
-      setTimeout(() => {
-        pendingUpdateCounter--; // декрементируем при выполнении
-        if (pendingUpdateCounter <= 0) {
-          // Выполняем реальную логику только когда счетчик достиг нуля
-          // (т.е. все запланированные обработчики выполнились)
-          updateSizes();
-        }
-        // Если счетчик > 0, ничего не делаем - есть еще запланированные обработчики
-      }, DEBOUNCE_DELAY_MS);
+      updateSizes.debounce();
     });
 
     resizeObserver.observe(element);
