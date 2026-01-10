@@ -43,10 +43,10 @@
           d={graph.points
             .map((point: GraphPoint, i: number) => {
               const minTime = processMinMax.minMoment;
-              const maxBytes = processMinMax.maxBytes;
+              const maxKb = processMinMax.maxKb;
               // Преобразуем в единицы данных: десятые секунды и килобайты
               const x = point.moment - minTime;
-              const y = Number(maxBytes - point.bytes) / 1024;
+              const y = maxKb - point.kb;
               return `${i === 0 ? "M" : "L"} ${x},${y}`;
             })
             .join(" ")}
@@ -72,7 +72,7 @@
     <text
       class="grid-label-y"
       x="0"
-      y={toY(line.bytes / 1024)}
+      y={toY(line.kb)}
       text-anchor="start"
       dominant-baseline="middle"
       fill={frameColor}
@@ -142,11 +142,13 @@
 
   // Размеры области графика (после вычитания отступов)
   let graphAreaWidth = $derived.by(() => {
+    graphVersion; // читаем graphVersion для реактивности
     const padding = containerWidth * PADDING_PERCENT;
     return containerWidth - padding * 2 - LEFT_LABEL_SPACE;
   });
 
   let graphAreaHeight = $derived.by(() => {
+    graphVersion; // читаем graphVersion для реактивности
     const padding = containerHeight * PADDING_PERCENT;
     return containerHeight - padding * 2 - BOTTOM_LABEL_SPACE;
   });
@@ -156,7 +158,7 @@
 
   // Размеры данных графика в единицах данных
   let dataWidth = $derived.by(() => {
-    if (!processMinMax) return 1;
+    graphVersion; // читаем graphVersion для реактивности
     const minTime = processMinMax.minMoment;
     const maxTime = processMinMax.maxMoment;
     const timeRange = Math.max(maxTime - minTime, MIN_TIME_RANGE);
@@ -164,9 +166,8 @@
   });
 
   let dataHeight = $derived.by(() => {
-    if (!processMinMax) return 1;
-    const maxBytes = Number(processMinMax.maxBytes) || 1;
-    return maxBytes / 1024.0; // в килобайтах
+    graphVersion; // читаем graphVersion для реактивности
+    return processMinMax?.maxKb || 1;
   });
 
   // Трансформации для графика
@@ -198,8 +199,8 @@
   // Функция для подписей ординаты: прямое преобразование без инверсии
   // kilobytes=0 -> низ графика (большая координата Y)
   // kilobytes=max -> верх графика (маленькая координата Y)
-  function toY(kilobytes: number): number {
-    return graphTranslateY + graphAreaHeight - kilobytes * graphScaleY;
+  function toY(kb: number): number {
+    return graphTranslateY + graphAreaHeight - kb * graphScaleY;
   }
 
   let prefersDark = getContext<() => boolean>("prefersDark")!();
@@ -220,26 +221,27 @@
   ];
 
   // Возможные интервалы для горизонтальных осей в байтах
-  const GRID_INTERVALS_BYTES = [
-    10 * 1024 * 1024, // 10MB
-    50 * 1024 * 1024, // 50MB
-    100 * 1024 * 1024, // 100MB
-    300 * 1024 * 1024, // 300MB
-    500 * 1024 * 1024, // 500MB
-    800 * 1024 * 1024, // 800MB
-    1024 * 1024 * 1024, // 1GB
-    3 * 1024 * 1024 * 1024, // 3GB
-    5 * 1024 * 1024 * 1024, // 5GB
-    8 * 1024 * 1024 * 1024, // 8GB
-    10 * 1024 * 1024 * 1024, // 10GB
-    30 * 1024 * 1024 * 1024, // 30GB
-    50 * 1024 * 1024 * 1024, // 50GB
-    80 * 1024 * 1024 * 1024, // 80GB
-    100 * 1024 * 1024 * 1024, // 100GB
-    300 * 1024 * 1024 * 1024, // 300GB
-    500 * 1024 * 1024 * 1024, // 500GB
-    800 * 1024 * 1024 * 1024, // 800GB
-    1024 * 1024 * 1024 * 1024, // 1TB
+  const GRID_INTERVALS_KB = [
+    10 * 1024, // 10MB
+    50 * 1024, // 50MB
+    100 * 1024, // 100MB
+    300 * 1024, // 300MB
+    500 * 1024, // 500MB
+    800 * 1024, // 800MB
+    1024 * 1024, // 1GB
+    3 * 1024 * 1024, // 3GB
+    5 * 1024 * 1024, // 5GB
+    8 * 1024 * 1024, // 8GB
+    10 * 1024 * 1024, // 10GB
+    30 * 1024 * 1024, // 30GB
+    50 * 1024 * 1024, // 50GB
+    80 * 1024 * 1024, // 80GB
+    100 * 1024 * 1024, // 100GB
+    300 * 1024 * 1024, // 300GB
+    500 * 1024 * 1024, // 500GB
+    800 * 1024 * 1024, // 800GB
+    1024 * 1024 * 1024, // 1TB
+    2 * 1024 * 1024 * 1024, // 2TB, более 2 терабайт не отображаем, сломается.
   ];
 
   // Функция форматирования времени для меток (относительно начала графика)
@@ -263,22 +265,22 @@
   }
 
   // Функция форматирования байт для меток
-  function formatBytesLabel(bytes: number): string {
-    const kb = 1024;
-    const mb = 1024 * 1024;
-    const gb = 1024 * 1024 * 1024;
+  function formatBytesLabel(kb: number): string {
+    const mb = 1024;
+    const gb = 1024 * 1024;
+    const tb = 1024 * 1024 * 1024;
 
-    if (bytes >= gb) {
-      const gbValue = bytes / gb;
+    if (kb >= tb) {
+      const tbValue = kb / tb;
+      return `${tbValue.toFixed(tbValue >= 10 ? 0 : 1)}TB`;
+    } else if (kb >= gb) {
+      const gbValue = kb / gb;
       return `${gbValue.toFixed(gbValue >= 10 ? 0 : 1)}GB`;
-    } else if (bytes >= mb) {
-      const mbValue = bytes / mb;
+    } else if (kb >= mb) {
+      const mbValue = kb / mb;
       return `${mbValue.toFixed(mbValue >= 10 ? 0 : 1)}MB`;
-    } else if (bytes >= kb) {
-      const kbValue = bytes / kb;
-      return `${Math.round(kbValue)}KB`;
     } else {
-      return `${bytes}B`;
+      return `${kb}KB`;
     }
   }
 
@@ -356,30 +358,29 @@
   // Мемоизация для gridHorizontalLines
   let cachedHorizontalLines: Array<{
     yInDataUnits: number;
-    bytes: number;
+    kb: number;
     label: string;
   }> = [];
-  let cachedMinBytes: number | null = null;
-  let cachedMaxBytes: number | null = null;
-  let cachedBytesInterval: number | null = null;
+  let cachedMinKb: number | null = null;
+  let cachedMaxKb: number | null = null;
+  let cachedKbInterval: number | null = null;
 
   // Вычисление позиций горизонтальных осей
   let gridHorizontalLines = $derived.by(() => {
     if (!processMinMax) {
       cachedHorizontalLines = [];
-      cachedMinBytes = null;
-      cachedMaxBytes = null;
+      cachedMinKb = null;
+      cachedMaxKb = null;
       return [];
     }
-    const maxBytes = Number(processMinMax.maxBytes);
-    const minBytes = 0;
+    const maxKb = processMinMax.maxKb;
+    const minKb = 0;
 
     // Выбираем интервал: максимальное количество осей, но не более 5
-    let selectedInterval =
-      GRID_INTERVALS_BYTES[GRID_INTERVALS_BYTES.length - 1];
-    for (const interval of GRID_INTERVALS_BYTES) {
+    let selectedInterval = GRID_INTERVALS_KB[GRID_INTERVALS_KB.length - 1];
+    for (const interval of GRID_INTERVALS_KB) {
       // деление нацело
-      let count = (maxBytes - minBytes) / interval;
+      let count = (maxKb - minKb) / interval;
       if (count <= 5) {
         selectedInterval = interval;
         break;
@@ -388,14 +389,14 @@
 
     // Если диапазон байт и интервал не изменились, возвращаем кэшированный результат
     if (
-      cachedMinBytes === minBytes &&
-      cachedMaxBytes === maxBytes &&
-      cachedBytesInterval === selectedInterval &&
+      cachedMinKb === minKb &&
+      cachedMaxKb === maxKb &&
+      cachedKbInterval === selectedInterval &&
       cachedHorizontalLines.length > 0
     ) {
       return cachedHorizontalLines.map((line) => ({
         ...line,
-        yInDataUnits: (maxBytes - line.bytes) / 1024.0,
+        yInDataUnits: maxKb - line.kb,
       }));
     }
 
@@ -403,21 +404,21 @@
     const firstTick = selectedInterval;
     const lines: Array<{
       yInDataUnits: number;
-      bytes: number;
+      kb: number;
       label: string;
     }> = [];
 
-    for (let tick = firstTick; tick < maxBytes; tick += selectedInterval) {
-      const yInDataUnits = (maxBytes - tick) / 1024.0; // в килобайтах, инвертировано
+    for (let tick = firstTick; tick < maxKb; tick += selectedInterval) {
+      const yInDataUnits = maxKb - tick; // в килобайтах, инвертировано
       const label = formatBytesLabel(tick);
-      lines.push({ yInDataUnits, bytes: tick, label });
+      lines.push({ yInDataUnits, kb: tick, label });
     }
 
     // Кэшируем результат
     cachedHorizontalLines = lines;
-    cachedMinBytes = minBytes;
-    cachedMaxBytes = maxBytes;
-    cachedBytesInterval = selectedInterval;
+    cachedMinKb = minKb;
+    cachedMaxKb = maxKb;
+    cachedKbInterval = selectedInterval;
 
     return lines;
   });

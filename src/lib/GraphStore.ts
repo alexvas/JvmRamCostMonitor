@@ -21,7 +21,8 @@ export interface GraphKey {
 
 export interface GraphPoint {
   moment: number;
-  bytes: bigint;
+  kb: number;
+  originalBytes: bigint;
 }
 
 export interface MetricGraph {
@@ -41,7 +42,8 @@ interface ProcessDatum {
 export interface ProcessMinMax {
   minMoment: number;
   maxMoment: number;
-  maxBytes: bigint;
+  // до 2 терабайт
+  maxKb: number;
 }
 
 export class GraphStore {
@@ -92,7 +94,7 @@ export class GraphStore {
       const minMax = {
         minMoment: Number.MAX_SAFE_INTEGER,
         maxMoment: Number.MIN_SAFE_INTEGER,
-        maxBytes: -1n,
+        maxKb: -1,
       };
 
       processDatum = {
@@ -117,8 +119,11 @@ export class GraphStore {
       return;
     }
     timestamps!.add(moment);
+    const kbBigInt = bytes / 1024n;
+    // работает до 2 терабайт
+    const kb = Math.round(Number(kbBigInt));
 
-    points.push({ moment: moment, bytes: bytes });
+    points.push({ moment: moment, kb: kb, originalBytes: bytes });
 
     let minMax = processDatum.minMax;
     // Обновляем min/max по времени для процесса
@@ -130,8 +135,8 @@ export class GraphStore {
     }
 
     // Обновляем max bytes для процесса
-    if (minMax.maxBytes < bytes) {
-      minMax.maxBytes = bytes;
+    if (minMax.maxKb < kb) {
+      minMax.maxKb = kb;
     }
 
     // Trim если превышен лимит
@@ -145,12 +150,12 @@ export class GraphStore {
     }
 
     // Array хранит элементы в порядке вставки — первые элементы самые старые
-    let maxRemovedBytes = -1n;
+    let maxRemovedKb = -1;
     let removed = points.splice(0, toRemoveCount);
     removed.forEach(point => {
       timestamps.delete(point.moment);
-      if (maxRemovedBytes < point.bytes) {
-        maxRemovedBytes = point.bytes;
+      if (maxRemovedKb < point.kb) {
+        maxRemovedKb = point.kb;
       }
     });
 
@@ -160,7 +165,7 @@ export class GraphStore {
     this.recalculateMinMoment(processDatum, firstMomentOfTrimmedPoints);
 
     // Пересчитываем maxBytes если удалённые точки содержали максимум
-    if (maxRemovedBytes >= processDatum.minMax.maxBytes) {
+    if (processDatum.minMax.maxKb <= maxRemovedKb) {
       this.recalculateMaxBytes(processDatum);
     }
   }
@@ -178,15 +183,15 @@ export class GraphStore {
   }
 
   private recalculateMaxBytes(processData: ProcessDatum): void {
-    let maxBytes = -1n;
+    let maxKb = -1;
     for (const points of processData.points.values()) {
       for (const point of points) {
-        if (maxBytes < point.bytes) {
-          maxBytes = point.bytes;
+        if (maxKb < point.kb) {
+          maxKb = point.kb;
         }
       }
     }
-    processData.minMax.maxBytes = maxBytes;
+    processData.minMax.maxKb = maxKb;
   }
 }
 
