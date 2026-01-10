@@ -23,12 +23,8 @@
 <script lang="ts">
   import { setContext } from "svelte";
   import { page } from "$app/state";
-  import {
-    ProcInfo,
-    GraphQueues,
-    JvmProcessListResponse,
-  } from "$lib/generated/proto/protocol";
-  import { listenGraphQueues } from "$lib/ProtoAdapter";
+  import { listenGraphQueues, listenJvmProcessList } from "$lib/ProtoAdapter";
+  import type { ProcInfo } from "$lib/ProcHandle";
 
   let { children } = $props();
   let followingPids = $state<bigint[]>([]);
@@ -37,22 +33,8 @@
   setContext("followingPids", () => followingPids);
   setContext("availableJvmProcesses", () => availableJvmProcesses);
 
-  import { listen } from "@tauri-apps/api/event";
-
-  listen<JvmProcessListResponse>("available-jvm-processes-updated", (event) => {
-    const sortedProcesses = [...event.payload.infos].sort((a, b) => {
-      const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
-      const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
-      if (pidA < pidB) return -1;
-      if (pidA > pidB) return 1;
-      return 0;
-    });
-    availableJvmProcesses = new Map(
-      sortedProcesses.map((proc) => {
-        const pid = typeof proc.pid === "bigint" ? proc.pid : BigInt(proc.pid);
-        return [pid, proc];
-      }),
-    );
+  listenJvmProcessList((procInfoMap) => {
+    availableJvmProcesses = procInfoMap;
   });
 
   let graphVersion = $state(0);

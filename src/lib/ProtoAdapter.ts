@@ -4,12 +4,14 @@ import {
     SetInvisibleRequest,
     ApplicableMetricsResponse,
     type GraphPoint as ProtoGraphPoint,
-    type GraphQueues
+    type GraphQueues,
+    type JvmProcessListResponse
 } from "$lib/generated/proto/protocol";
 import type { Timestamp } from "$lib/generated/google/protobuf/timestamp";
-import { MetricType, type GraphPoint, graphStore } from "./GraphStore";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import type { ProcInfo } from "./ProcHandle";
+import { MetricType, type GraphPoint } from "./GraphStore";
 
 /** Преобразование из protobuf MetricType в наш MetricType */
 function fromProtoMetricType(protoType: ProtoMetricType): MetricType {
@@ -66,7 +68,6 @@ function fromProtoGraphPoint(input: ProtoGraphPoint): GraphPoint {
     };
 }
 
-
 export async function listenGraphQueues(listener: (pid: bigint, metricType: MetricType, points: GraphPoint[]) => void) {
 
     const unlisten = await listen<GraphQueues>("graph-queues-updated", (event) => {
@@ -83,4 +84,26 @@ export async function listenGraphQueues(listener: (pid: bigint, metricType: Metr
     });
 
     return unlisten;
+}
+
+export async function listenJvmProcessList(listener: (procInfoMap: Map<bigint, ProcInfo>) => void) {
+ 
+    const unlisten = await listen<JvmProcessListResponse>("available-jvm-processes-updated", (event) => {
+        const sortedProcesses = [...event.payload.infos].sort((a, b) => {
+          const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
+          const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
+          if (pidA < pidB) return -1;
+          if (pidA > pidB) return 1;
+          return 0;
+        });
+        const availableJvmProcesses = new Map(
+          sortedProcesses.map((proc) => {
+            const pid = typeof proc.pid === "bigint" ? proc.pid : BigInt(proc.pid);
+            return [pid, proc];
+          }),
+        );
+        listener(availableJvmProcesses)
+      });
+      
+      return unlisten;
 }

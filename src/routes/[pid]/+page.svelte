@@ -12,7 +12,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { getContext } from "svelte";
-  import { ProcInfo } from "$lib/generated/proto/protocol";
+  import type { ProcInfo } from "$lib/ProcHandle";
   import GraphPlot from "./GraphPlot.svelte";
   let pidStr = $derived(page.params.pid);
   let pid = $derived(pidStr ? BigInt(pidStr) : null);

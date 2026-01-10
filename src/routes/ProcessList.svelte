@@ -36,7 +36,7 @@
   let followingPids = $derived(getFollowingPids());
 
   import { invoke } from "@tauri-apps/api/core";
-  import { ProcInfo } from "$lib/generated/proto/protocol";
+  import type { ProcInfo } from "$lib/ProcHandle";
 
   async function followPids(pids: bigint[]) {
     const request = {
