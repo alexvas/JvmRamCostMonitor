@@ -20,7 +20,7 @@ export interface GraphKey {
 }
 
 export interface GraphPoint {
-  moment: Date;
+  moment: number;
   bytes: bigint;
 }
 
@@ -28,212 +28,165 @@ export interface MetricGraph {
   pid: bigint;
   metricType: MetricType;
   points: GraphPoint[];
-  minMax: ProcessMinMax;
 }
 
 /** Данные по одному процессу: метрики, min/max по времени и байтам */
-interface ProcessData {
-  /** MetricType -> (timestamp_ms -> bytes), отсортировано по времени */
-  metrics: Map<MetricType, Map<number, bigint>>;
-  minMoment: Date;
-  maxMoment: Date;
-  maxBytes: bigint;
+interface ProcessDatum {
+  /** MetricType -> GraphPoint[], отсортировано по времени */
+  points: Map<MetricType, GraphPoint[]>;
+  timestamps: Map<MetricType, Set<number>>;
+  minMax: ProcessMinMax;
 }
 
 export interface ProcessMinMax {
-  minMoment: Date;
-  maxMoment: Date;
+  minMoment: number;
+  maxMoment: number;
   maxBytes: bigint;
 }
 
 export class GraphStore {
-  
+
   /** pid -> ProcessData */
-  private data = new Map<bigint, ProcessData>();
+  private prosessData = new Map<bigint, ProcessDatum>();
 
   hasGraphDataForProcess(pid: bigint): boolean {
-    const processData = this.data.get(pid);
-    if (!processData) return false;
-    return processData.metrics.size > 0;
-  }
-
-  /** Все ключи графиков */
-  keys(): GraphKey[] {
-    const result: GraphKey[] = [];
-    for (const [pid, processData] of this.data) {
-      for (const type of processData.metrics.keys()) {
-        result.push({ type, pid });
-      }
-    }
-    return result;
+    return (this.prosessData.get(pid)?.timestamps?.size ?? 0) > 0;
   }
 
   /** Все графики для конкретного процесса */
-  getGraphs(pid: bigint): MetricGraph[] {
-    const processData = this.data.get(pid);
+  getGraphs(pid: bigint): Iterable<MetricGraph> {
+    const processData = this.prosessData.get(pid);
     if (!processData) return [];
 
-    const minMax: ProcessMinMax = {
-      minMoment: processData.minMoment,
-      maxMoment: processData.maxMoment,
-      maxBytes: processData.maxBytes,
-    };
-
-    const result: MetricGraph[] = [];
-    for (const [metricType, pointsMap] of processData.metrics) {
-      // Map гарантирует порядок вставки — сортировка не нужна,
-      // если данные добавляются в хронологическом порядке
-      const points: GraphPoint[] = [];
-      for (const [ts, bytes] of pointsMap) {
-        points.push({ moment: new Date(ts), bytes });
-      }
-
-      result.push({ pid, metricType, points, minMax });
-    }
-
-    return result;
-  }
-
-  /** Проверка на пустоту */
-  isEmpty(): boolean {
-    if (this.data.size === 0) return true;
-    for (const processData of this.data.values()) {
-      for (const points of processData.metrics.values()) {
-        if (points.size > 0) return false;
-      }
-    }
-    return true;
+    return processData.points
+      .entries()
+      .map(([metricType, points]) => ({ pid, metricType, points }));
   }
 
   /** Проверка есть ли данные для конкретного процесса */
   hasProcess(pid: bigint): boolean {
-    return this.data.has(pid);
+    return this.prosessData.has(pid);
   }
 
   /** Получить min/max для конкретного процесса */
   getProcessMinMax(pid: bigint): ProcessMinMax | null {
-    const processData = this.data.get(pid);
-    if (!processData) return null;
-    return {
-      minMoment: processData.minMoment,
-      maxMoment: processData.maxMoment,
-      maxBytes: processData.maxBytes,
-    };
-  }
-
-  /** Добавить точки для метрики процесса */
-  put(pid: bigint, metricType: MetricType, points: GraphPoint[]): void {
-    for (const point of points) {
-      this.addPoint(pid, metricType, point);
-    }
+    return this.prosessData.get(pid)?.minMax ?? null;
   }
 
   /** Удалить все данные для конкретного процесса */
   deleteProcess(pid: bigint): boolean {
-    return this.data.delete(pid);
+    return this.prosessData.delete(pid);
   }
 
   /** Удалить все данные */
   clear(): void {
-    this.data.clear();
+    this.prosessData.clear();
   }
 
-  private addPoint(pid: bigint, metricType: MetricType, input: GraphPoint): void {
 
-    let processData = this.data.get(pid);
-    if (!processData) {
-      processData = {
-        metrics: new Map(),
-        minMoment: new Date(8640000000000000), // Date.MAX
-        maxMoment: new Date(-8640000000000000), // Date.MIN
+  /** Добавить точки для метрики процесса */
+  put(pid: bigint, metricType: MetricType, moment: number, bytes: bigint): void {
+
+    let processDatum = this.prosessData.get(pid);
+    if (!processDatum) {
+      const minMax = {
+        minMoment: Number.MAX_SAFE_INTEGER,
+        maxMoment: Number.MIN_SAFE_INTEGER,
         maxBytes: -1n,
       };
-      this.data.set(pid, processData);
+
+      processDatum = {
+        points: new Map(),
+        timestamps: new Map(),
+        minMax: minMax,
+      };
+      this.prosessData.set(pid, processDatum);
     }
 
-    let points = processData.metrics.get(metricType);
+    let points = processDatum.points.get(metricType);
+    let timestamps = processDatum.timestamps.get(metricType);
     if (!points) {
-      points = new Map();
-      processData.metrics.set(metricType, points);
+      points = [];
+      processDatum.points.set(metricType, points);
+      timestamps = new Set();
+      processDatum.timestamps.set(metricType, timestamps);
     }
-
-    const ts = input.moment.getTime();
 
     // Если такой момент уже есть — пропускаем
-    if (points.has(ts)) {
+    if (timestamps!.has(moment)) {
       return;
     }
+    timestamps!.add(moment);
 
-    points.set(ts, input.bytes);
+    points.push({ moment: moment, bytes: bytes });
 
+    let minMax = processDatum.minMax;
     // Обновляем min/max по времени для процесса
-    if (input.moment < processData.minMoment) {
-      processData.minMoment = input.moment;
+    if (minMax.minMoment > moment) {
+      minMax.minMoment = moment;
     }
-    if (input.moment > processData.maxMoment) {
-      processData.maxMoment = input.moment;
+    if (minMax.maxMoment < moment) {
+      minMax.maxMoment = moment;
     }
 
     // Обновляем max bytes для процесса
-    if (input.bytes > processData.maxBytes) {
-      processData.maxBytes = input.bytes;
+    if (minMax.maxBytes < bytes) {
+      minMax.maxBytes = bytes;
     }
 
     // Trim если превышен лимит
-    this.trimIfNeeded(processData, points);
+    this.trimIfNeeded(processDatum, points, timestamps!);
   }
 
-  private trimIfNeeded(processData: ProcessData, points: Map<number, bigint>): void {
-    const toRemoveCount = points.size - SIZE_LIMIT;
+  private trimIfNeeded(processDatum: ProcessDatum, points: GraphPoint[], timestamps: Set<number>): void {
+    const toRemoveCount = points.length - SIZE_LIMIT;
     if (toRemoveCount <= 0) {
       return;
     }
 
-    // Map хранит элементы в порядке вставки — первые элементы самые старые
-    let removed = 0;
+    // Array хранит элементы в порядке вставки — первые элементы самые старые
     let maxRemovedBytes = -1n;
-    for (const [ts, bytes] of points) {
-      if (removed >= toRemoveCount) break;
-      if (bytes > maxRemovedBytes) {
-        maxRemovedBytes = bytes;
+    let removed = points.splice(0, toRemoveCount);
+    removed.forEach(point => {
+      timestamps.delete(point.moment);
+      if (maxRemovedBytes < point.bytes) {
+        maxRemovedBytes = point.bytes;
       }
-      points.delete(ts);
-      removed++;
-    }
+    });
+
+    const firstMomentOfTrimmedPoints = points[0].moment;
 
     // Пересчитываем minMoment для всего процесса
-    this.recalculateMinMoment(processData);
+    this.recalculateMinMoment(processDatum, firstMomentOfTrimmedPoints);
 
     // Пересчитываем maxBytes если удалённые точки содержали максимум
-    if (maxRemovedBytes >= processData.maxBytes) {
-      this.recalculateMaxBytes(processData);
+    if (maxRemovedBytes >= processDatum.minMax.maxBytes) {
+      this.recalculateMaxBytes(processDatum);
     }
   }
 
-  private recalculateMinMoment(processData: ProcessData): void {
-    let minTs = Number.MAX_SAFE_INTEGER;
-    for (const points of processData.metrics.values()) {
-      // Map хранит элементы в хронологическом порядке — первый ключ минимальный
-      const firstTs = points.keys().next().value;
-      if (firstTs !== undefined && firstTs < minTs) {
-        minTs = firstTs;
+  private recalculateMinMoment(processData: ProcessDatum, newMinMoment: number): void {
+    processData.minMax.minMoment = newMinMoment;
+    for (const metricType of processData.points.keys()) {
+      const points = processData.points.get(metricType);
+      const timestamps = processData.timestamps.get(metricType);
+      while (points && points.length > 0 && points[0].moment < newMinMoment) {
+        const removed = points.shift();
+        timestamps!.delete(removed!.moment);
       }
     }
-    if (minTs !== Number.MAX_SAFE_INTEGER) {
-      processData.minMoment = new Date(minTs);
-    }
   }
 
-  private recalculateMaxBytes(processData: ProcessData): void {
+  private recalculateMaxBytes(processData: ProcessDatum): void {
     let maxBytes = -1n;
-    for (const points of processData.metrics.values()) {
-      for (const bytes of points.values()) {
-        if (bytes > maxBytes) {
-          maxBytes = bytes;
+    for (const points of processData.points.values()) {
+      for (const point of points) {
+        if (maxBytes < point.bytes) {
+          maxBytes = point.bytes;
         }
       }
     }
-    processData.maxBytes = maxBytes;
+    processData.minMax.maxBytes = maxBytes;
   }
 }
 

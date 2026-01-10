@@ -47,63 +47,51 @@ export async function getApplicableMetrics() {
     return response.types.map(fromProtoMetricType);
 }
 
-function covertMoment(moment: Timestamp): Date {
-    const millis = Number(moment.seconds) * 1000 + (moment.nanos ?? 0) / 1_000_000;
-    return new Date(millis);
+function covertMoment(moment: Timestamp): number {
+    const deciSeconds = Number(moment.seconds) * 10 + Math.round((moment.nanos ?? 0) / 100_000_000);
+    return deciSeconds;
 }
 
-function fromProtoGraphPoint(input: ProtoGraphPoint): GraphPoint {
-    if (input.moment === undefined) {
-        throw new Error("GraphPoint moment is undefined");
-    }
-    if (input.bytes < 0n) {
-        throw new Error(`Bytes in GraphPoint must be positive: ${input.bytes}`);
-    }
-
-    const moment = covertMoment(input.moment);
-
-    return {
-        moment: moment,
-        bytes: BigInt(input.bytes)
-    };
-}
-
-export async function listenGraphQueues(listener: (pid: bigint, metricType: MetricType, points: GraphPoint[]) => void) {
+export async function listenGraphQueues(
+    listener: (pid: bigint, metricType: MetricType, moment: number, bytes: bigint) => void
+) {
 
     const unlisten = await listen<GraphQueues>("graph-queues-updated", (event) => {
-        const pid =
-            typeof event.payload.pid === "bigint"
-                ? event.payload.pid
-                : BigInt(event.payload.pid);
-        const queues = event.payload.queues;
-        for (const queue of queues) {
+        const pid = BigInt(event.payload.pid);
+        event.payload.queues.forEach((queue) => {
             const metricType = fromProtoMetricType(queue.metric_type);
-            const points = queue.points.map(fromProtoGraphPoint);
-            listener(pid, metricType, points);
-        }
+            queue.points.forEach((protoPoint) => {
+                const moment = covertMoment(protoPoint.moment!);
+                const bytes = BigInt(protoPoint.bytes);
+                if (bytes < 0n) {
+                    console.error(`Bytes in GraphPoint pid ${pid}, metric type ${metricType} must be positive: ${bytes}`);
+                } else {
+                    listener(pid, metricType, moment, bytes);
+                }
+            });
+        });
     });
-
     return unlisten;
 }
 
 export async function listenJvmProcessList(listener: (procInfoMap: Map<bigint, ProcInfo>) => void) {
- 
+
     const unlisten = await listen<JvmProcessListResponse>("available-jvm-processes-updated", (event) => {
         const sortedProcesses = [...event.payload.infos].sort((a, b) => {
-          const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
-          const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
-          if (pidA < pidB) return -1;
-          if (pidA > pidB) return 1;
-          return 0;
+            const pidA = typeof a.pid === "bigint" ? a.pid : BigInt(a.pid);
+            const pidB = typeof b.pid === "bigint" ? b.pid : BigInt(b.pid);
+            if (pidA < pidB) return -1;
+            if (pidA > pidB) return 1;
+            return 0;
         });
         const availableJvmProcesses = new Map(
-          sortedProcesses.map((proc) => {
-            const pid = typeof proc.pid === "bigint" ? proc.pid : BigInt(proc.pid);
-            return [pid, proc];
-          }),
+            sortedProcesses.map((proc) => {
+                const pid = BigInt(proc.pid);
+                return [pid, proc];
+            }),
         );
         listener(availableJvmProcesses)
-      });
-      
-      return unlisten;
+    });
+
+    return unlisten;
 }

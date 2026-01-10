@@ -41,8 +41,8 @@
   setContext("graphVersion", () => graphVersion);
   import { graphStore } from "$lib/GraphStore";
 
-  listenGraphQueues((pid, metricType, points) => {
-    graphStore.put(pid, metricType, points);
+  listenGraphQueues((pid, metricType, moment, bytes) => {
+    graphStore.put(pid, metricType, moment, bytes);
     graphVersion++;
   });
 

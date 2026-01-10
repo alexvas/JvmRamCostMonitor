@@ -37,16 +37,16 @@
           .join(" ")}
       ></path>
       <!-- Графики данных -->
-      {#each graphs as graph (graph.metricType)}
+      {#each graphs as graph}
         <path
           class="graph-path graph-path-{MetricType[graph.metricType]}"
           d={graph.points
             .map((point: GraphPoint, i: number) => {
-              const minTime = processMinMax.minMoment.getTime();
-              const maxBytes = Number(processMinMax.maxBytes);
+              const minTime = processMinMax.minMoment;
+              const maxBytes = processMinMax.maxBytes;
               // Преобразуем в единицы данных: десятые секунды и килобайты
-              const x = (point.moment.getTime() - minTime) / 100;
-              const y = (maxBytes - Number(point.bytes)) / 1024;
+              const x = point.moment - minTime;
+              const y = Number(maxBytes - point.bytes) / 1024;
               return `${i === 0 ? "M" : "L"} ${x},${y}`;
             })
             .join(" ")}
@@ -131,7 +131,7 @@
       pendingUpdateCounter++; // инкрементируем счетчик при каждом событии
       setTimeout(() => {
         pendingUpdateCounter--; // декрементируем при выполнении
-        if (pendingUpdateCounter === 0) {
+        if (pendingUpdateCounter <= 0) {
           // Выполняем реальную логику только когда счетчик достиг нуля
           // (т.е. все запланированные обработчики выполнились)
           updateSizes();
@@ -168,16 +168,16 @@
     return containerHeight - padding * 2 - BOTTOM_LABEL_SPACE;
   });
 
-  // Минимальный диапазон времени графика в миллисекундах (2 минуты)
-  const MIN_TIME_RANGE = 120 * 1000;
+  // Минимальный диапазон времени графика в десятых долях секунды (2 минуты)
+  const MIN_TIME_RANGE = 2 * 60 * 10;
 
   // Размеры данных графика в единицах данных
   let dataWidth = $derived.by(() => {
     if (!processMinMax) return 1;
-    const minTime = processMinMax.minMoment.getTime();
-    const maxTime = processMinMax.maxMoment.getTime();
-    const timeRange = Math.max(maxTime - minTime || 1, MIN_TIME_RANGE);
-    return timeRange / 100.0; // в десятых долях секунды
+    const minTime = processMinMax.minMoment;
+    const maxTime = processMinMax.maxMoment;
+    const timeRange = Math.max(maxTime - minTime, MIN_TIME_RANGE);
+    return timeRange; // в десятых долях секунды
   });
 
   let dataHeight = $derived.by(() => {
@@ -222,24 +222,22 @@
   let prefersDark = getContext<() => boolean>("prefersDark")!();
   let frameColor = prefersDark ? "white" : "black";
 
-  // Возможные интервалы для вертикальных осей в миллисекундах
-  const GRID_INTERVALS_MS = [
-    30 * 1000, // 30 секунд
-    60 * 1000, // 1 минута
-    5 * 60 * 1000, // 5 минут
-    10 * 60 * 1000, // 10 минут
-    30 * 60 * 1000, // 30 минут
-    60 * 60 * 1000, // 1 час
-    2 * 60 * 60 * 1000, // 2 часа
-    4 * 60 * 60 * 1000, // 4 часа
-    8 * 60 * 60 * 1000, // 8 часов
-    24 * 60 * 60 * 1000, // сутки
+  // Возможные интервалы для вертикальных осей в десятых долях секунды
+  const GRID_INTERVALS_TENTH_OF_SECOND = [
+    30 * 10, // 30 секунд
+    60 * 10, // 1 минута
+    5 * 60 * 10, // 5 минут
+    10 * 60 * 10, // 10 минут
+    30 * 60 * 10, // 30 минут
+    60 * 60 * 10, // 1 час
+    2 * 60 * 60 * 10, // 2 часа
+    4 * 60 * 60 * 10, // 4 часа
+    8 * 60 * 60 * 10, // 8 часов
+    24 * 60 * 60 * 10, // сутки
   ];
 
   // Возможные интервалы для горизонтальных осей в байтах
   const GRID_INTERVALS_BYTES = [
-    1024 * 1024, // 1MB
-    5 * 1024 * 1024, // 5MB
     10 * 1024 * 1024, // 10MB
     50 * 1024 * 1024, // 50MB
     100 * 1024 * 1024, // 100MB
@@ -267,14 +265,14 @@
     minTime: number,
     interval: number,
   ): string {
-    const relativeMs = tick - minTime;
-    const seconds = Math.floor(relativeMs / 1000);
+    const relativeTenthsOfSecond = tick - minTime;
+    const seconds = Math.floor(relativeTenthsOfSecond / 10);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
-    if (interval < 60 * 1000) {
+    if (interval < 60 * 10) {
       return `${seconds}s`;
-    } else if (interval < 60 * 60 * 1000) {
+    } else if (interval < 60 * 60 * 10) {
       return `${minutes}m`;
     } else {
       return `${hours}h`;
@@ -319,13 +317,14 @@
       cachedMaxTime = null;
       return [];
     }
-    const minTime = processMinMax.minMoment.getTime();
-    const maxTime = processMinMax.maxMoment.getTime();
+    const minTime = processMinMax.minMoment;
+    const maxTime = processMinMax.maxMoment;
     const timeRange = maxTime - minTime;
 
     // Выбираем интервал: максимальное количество осей, но не более 10
-    let selectedInterval = GRID_INTERVALS_MS[GRID_INTERVALS_MS.length - 1];
-    for (const interval of GRID_INTERVALS_MS) {
+    let selectedInterval =
+      GRID_INTERVALS_TENTH_OF_SECOND[GRID_INTERVALS_TENTH_OF_SECOND.length - 1];
+    for (const interval of GRID_INTERVALS_TENTH_OF_SECOND) {
       // деление нацело
       let count = timeRange / interval;
 
@@ -344,7 +343,7 @@
     ) {
       return cachedGridLines.map((line) => ({
         ...line,
-        xInDataUnits: (line.tick - minTime) / 100.0,
+        xInDataUnits: line.tick - minTime,
       }));
     }
 
@@ -357,7 +356,7 @@
     }> = [];
 
     for (let tick = firstTick; tick < maxTime; tick += selectedInterval) {
-      const xInDataUnits = (tick - minTime) / 100.0; // в десятых долях секунды
+      const xInDataUnits = tick - minTime; // в десятых долях секунды
       const label = formatTimeLabel(tick, minTime, selectedInterval);
       lines.push({ xInDataUnits, tick, label });
     }
