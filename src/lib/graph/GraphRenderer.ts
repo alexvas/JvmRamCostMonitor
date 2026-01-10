@@ -334,10 +334,9 @@ export class GraphRenderer {
             if (graph.points.length === 0) continue;
             const lastPoint = graph.points[graph.points.length - 1];
             const y = lastPoint.kb;
-            const label = formatBytesLabel(y);
+            const label = formatBytesLabel(y, 2);
             const metricType = graph.metricType;
             const metricTypeName = this.metricNames[metricType] || `Metric${metricType}`;
-            console.log('graph of ', metricTypeName, ' last point: ', lastPoint);
             const metricColorMeta = this.metricColors[metricType];
             const metricColor = metricColorMeta[this.config.prefersDark ? 'color_dark' : 'color_light'];
             lines.push(/*svg*/`<square x="${xStart}" y="${y}" width="10" height="10" fill="${metricColor}"/>`);

@@ -28,26 +28,39 @@ export function formatTimeLabel(
   }
 }
 
+
+function fixedPrecision(value: number, precision: number): string {
+  if (value < 10) {
+    return value.toFixed(Math.max(0, precision));
+  } else if (value < 100) {
+    return value.toFixed(Math.max(0, precision - 1));
+  } else if (value < 1000) {
+    return value.toFixed(Math.max(0, precision - 2));
+  } else { 
+    return value.toFixed(Math.max(0, precision - 3));
+  }
+}
+
 /**
  * Форматирует байты для меток ординаты
  * @param kb - значение в килобайтах
  * @returns отформатированная строка с единицами измерения
  */
-export function formatBytesLabel(kb: number): string {
+export function formatBytesLabel(kb: number, precision: number = 1): string {
   const mb = 1024;
   const gb = 1024 * 1024;
   const tb = 1024 * 1024 * 1024;
 
   if (kb >= tb) {
     const tbValue = kb / tb;
-    return `${tbValue.toFixed(tbValue >= 10 ? 0 : 1)}TB`;
+    return `${fixedPrecision(tbValue, precision)} TB`;
   } else if (kb >= gb) {
     const gbValue = kb / gb;
-    return `${gbValue.toFixed(gbValue >= 10 ? 0 : 1)}GB`;
+    return `${fixedPrecision(gbValue, precision)} GB`;
   } else if (kb >= mb) {
     const mbValue = kb / mb;
-    return `${mbValue.toFixed(mbValue >= 10 ? 0 : 1)}MB`;
+    return `${fixedPrecision(mbValue, precision)} MB`;
   } else {
-    return `${kb}KB`;
+    return `${fixedPrecision(kb, precision)} KB`;
   }
 }
