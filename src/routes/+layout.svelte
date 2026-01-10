@@ -1,5 +1,4 @@
 <div>
-  <h1>JVM RAM Cost</h1>
   <nav class="tabs-nav">
     <ul class="tabs-list">
       <li>
@@ -99,11 +98,22 @@
 </script>
 
 <style>
+  div {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
   .tabs-nav {
     background-color: #ffffff;
     border-bottom: 1px solid #d1d1d1;
     padding: 0;
     margin: 0;
+    height: 44px;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
   .tabs-list {
