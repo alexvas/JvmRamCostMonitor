@@ -5,83 +5,81 @@
   preserveAspectRatio="none"
 >
   {@html dynamicStyles}
-  {#if graphs && processMinMax}
-    <!-- Группа трансформаций для графика -->
-    <g transform={`translate(${graphTranslateX}, ${graphTranslateY})`}>
-      <g transform={`scale(${graphScaleX}, ${graphScaleY})`}>
-        <!-- Рамка графика -->
-        <rect
-          class="graph-frame"
-          x="0"
-          y="0"
-          width={dataWidth}
-          height={dataHeight}
-        ></rect>
-        <!-- Вспомогательные вертикальные линии -->
+  <!-- Группа трансформаций для графика -->
+  <g transform={`translate(${graphTranslateX}, ${graphTranslateY})`}>
+    <g transform={`scale(${graphScaleX}, ${graphScaleY})`}>
+      <!-- Рамка графика -->
+      <rect
+        class="graph-frame"
+        x="0"
+        y="0"
+        width={dataWidth}
+        height={dataHeight}
+      ></rect>
+      <!-- Вспомогательные вертикальные линии -->
+      <path
+        class="grid-lines"
+        d={gridVerticalLines
+          .map(
+            (line) =>
+              `M ${line.xInDataUnits},0 L ${line.xInDataUnits},${dataHeight}`,
+          )
+          .join(" ")}
+      ></path>
+      <!-- Вспомогательные горизонтальные линии -->
+      <path
+        class="grid-lines"
+        d={gridHorizontalLines
+          .map(
+            (line) =>
+              `M 0,${line.yInDataUnits} L ${dataWidth},${line.yInDataUnits}`,
+          )
+          .join(" ")}
+      ></path>
+      <!-- Графики данных -->
+      {#each graphs as graph (graph.metricType)}
         <path
-          class="grid-lines"
-          d={gridVerticalLines
-            .map(
-              (line) =>
-                `M ${line.xInDataUnits},0 L ${line.xInDataUnits},${dataHeight}`,
-            )
+          class="graph-path graph-path-{MetricType[graph.metricType]}"
+          d={graph.points
+            .map((point: GraphPoint, i: number) => {
+              const minTime = processMinMax.minMoment.getTime();
+              const maxBytes = Number(processMinMax.maxBytes);
+              // Преобразуем в единицы данных: десятые секунды и килобайты
+              const x = (point.moment.getTime() - minTime) / 100;
+              const y = (maxBytes - Number(point.bytes)) / 1024;
+              return `${i === 0 ? "M" : "L"} ${x},${y}`;
+            })
             .join(" ")}
         ></path>
-        <!-- Вспомогательные горизонтальные линии -->
-        <path
-          class="grid-lines"
-          d={gridHorizontalLines
-            .map(
-              (line) =>
-                `M 0,${line.yInDataUnits} L ${dataWidth},${line.yInDataUnits}`,
-            )
-            .join(" ")}
-        ></path>
-        <!-- Графики данных -->
-        {#each graphs as graph (graph.metricType)}
-          <path
-            class="graph-path graph-path-{MetricType[graph.metricType]}"
-            d={graph.points
-              .map((point: GraphPoint, i: number) => {
-                const minTime = processMinMax!.minMoment.getTime();
-                const maxBytes = Number(processMinMax!.maxBytes);
-                // Преобразуем в единицы данных: десятые секунды и килобайты
-                const x = (point.moment.getTime() - minTime) / 100;
-                const y = (maxBytes - Number(point.bytes)) / 1024;
-                return `${i === 0 ? "M" : "L"} ${x},${y}`;
-              })
-              .join(" ")}
-          ></path>
-        {/each}
-      </g>
+      {/each}
     </g>
-    <!-- Подписи абсциссы (вне групп трансформаций) -->
-    {#each gridVerticalLines as line}
-      <text
-        class="grid-label-x"
-        x={toX(line.xInDataUnits)}
-        y={containerHeight - 25}
-        text-anchor="middle"
-        dominant-baseline="hanging"
-        fill={frameColor}
-      >
-        {line.label}
-      </text>
-    {/each}
-    <!-- Подписи ординаты (вне групп трансформаций) -->
-    {#each gridHorizontalLines as line}
-      <text
-        class="grid-label-y"
-        x={100}
-        y={toYForLabel(line.bytes / 1024.0)}
-        text-anchor="end"
-        dominant-baseline="middle"
-        fill={frameColor}
-      >
-        {line.label}
-      </text>
-    {/each}
-  {/if}
+  </g>
+  <!-- Подписи абсциссы (вне групп трансформаций) -->
+  {#each gridVerticalLines as line}
+    <text
+      class="grid-label-x"
+      x={toX(line.xInDataUnits)}
+      y={containerHeight - 25}
+      text-anchor="middle"
+      dominant-baseline="hanging"
+      fill={frameColor}
+    >
+      {line.label}
+    </text>
+  {/each}
+  <!-- Подписи ординаты (вне групп трансформаций) -->
+  {#each gridHorizontalLines as line}
+    <text
+      class="grid-label-y"
+      x={100}
+      y={toYForLabel(line.bytes / 1024.0)}
+      text-anchor="end"
+      dominant-baseline="middle"
+      fill={frameColor}
+    >
+      {line.label}
+    </text>
+  {/each}
 </svg>
 
 <script lang="ts">
@@ -99,11 +97,11 @@
   let graphs = $derived.by(() => {
     graphVersion; // читаем graphVersion для реактивности
     return graphStore.getGraphs(pid);
-  });
+  })!;
   let processMinMax = $derived.by(() => {
     graphVersion; // читаем graphVersion для реактивности
     return graphStore.getProcessMinMax(pid);
-  });
+  })!;
 
   // Отслеживание размеров SVG контейнера
   $effect(() => {

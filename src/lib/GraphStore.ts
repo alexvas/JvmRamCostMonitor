@@ -37,8 +37,15 @@ export interface ProcessMinMax {
 }
 
 export class GraphStore {
+  
   /** pid -> ProcessData */
   private data = new Map<bigint, ProcessData>();
+
+  hasGraphDataForProcess(pid: bigint): boolean {
+    const processData = this.data.get(pid);
+    if (!processData) return false;
+    return processData.metrics.size > 0;
+  }
 
   /** Все ключи графиков */
   keys(): GraphKey[] {

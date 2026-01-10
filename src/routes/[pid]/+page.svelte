@@ -2,9 +2,9 @@
   <h2>Process {pidStr} not found</h2>
 {:else}
   <h2>{pidStr} {process.display_name}</h2>
-  {#if pid}
+  {#if hasGraph}
     <div class="graph-container">
-      <GraphPlot {pid} />
+      <GraphPlot pid={pid!} />
     </div>
   {/if}
 {/if}
@@ -19,8 +19,14 @@
   const getAvailableJvmProcesses = getContext<() => Map<bigint, ProcInfo>>(
     "availableJvmProcesses",
   )!;
-  let availableJvmProcesses = $derived(getAvailableJvmProcesses());
-  let process = $derived(pid ? availableJvmProcesses.get(pid) : undefined);
+  import { graphStore } from "$lib/GraphStore";
+  let process = $derived.by(() =>
+    pid ? getAvailableJvmProcesses().get(pid) : undefined,
+  );
+  // Процесс может быть среди отслеживаемых, но ещё не прислал данных.
+  const hasGraph = $derived(
+    pid ? graphStore.hasGraphDataForProcess(pid) : false,
+  );
 </script>
 
 <style>
