@@ -4,67 +4,71 @@
 
 /** Точка на графике */
 export interface GraphPoint {
-  moment: number;
-  kb: number;
+    moment: number;
+    kb: number;
 }
 
 /** Данные одного графика (одной метрики) */
 export interface GraphData {
-  metricType: number;
-  points: GraphPoint[];
+    metricType: number;
+    points: GraphPoint[];
 }
 
 /** Min/max значения для процесса */
 export interface ProcessMinMax {
-  minMoment: number;
-  maxMoment: number;
-  maxKb: number;
+    minMoment: number;
+    maxMoment: number;
+    maxKb: number;
 }
 
 /** Конфигурация рендерера */
 export interface GraphConfig {
-  containerWidth: number;
-  containerHeight: number;
-  paddingPercent?: number;
-  bottomLabelSpace?: number;
-  leftLabelSpace?: number;
-  minTimeRange?: number;
-  prefersDark?: boolean;
+    containerWidth: number;
+    containerHeight: number;
+    paddingPercent?: number;
+    bottomLabelSpace?: number;
+    leftLabelSpace?: number;
+    rightCurrentValueWidth?: number;
+    rightCurrentValuePadding?: number;
+    minTimeRange?: number;
+    prefersDark?: boolean;
 }
 
 /** Заполненная конфигурация со всеми значениями */
 export interface GraphConfigResolved {
-  containerWidth: number;
-  containerHeight: number;
-  paddingPercent: number;
-  bottomLabelSpace: number;
-  leftLabelSpace: number;
-  minTimeRange: number;
-  prefersDark: boolean;
+    containerWidth: number;
+    containerHeight: number;
+    paddingPercent: number;
+    bottomLabelSpace: number;
+    leftLabelSpace: number;
+    rightCurrentValueWidth: number;
+    rightCurrentValuePadding: number;
+    minTimeRange: number;
+    prefersDark: boolean;
 }
 
 /** Линия сетки */
 export interface GridLine {
-  positionInDataUnits: number;
-  label: string;
+    positionInDataUnits: number;
+    label: string;
 }
 
 /** Трансформации графика */
 export interface GraphTransform {
-  translateX: number;
-  translateY: number;
-  scaleX: number;
-  scaleY: number;
-  dataWidth: number;
-  dataHeight: number;
-  graphAreaWidth: number;
-  graphAreaHeight: number;
+    translateX: number;
+    translateY: number;
+    scaleX: number;
+    scaleY: number;
+    dataWidth: number;
+    dataHeight: number;
+    graphAreaWidth: number;
+    graphAreaHeight: number;
 }
 
 /** Мета-информация о цветах метрики */
 export interface MetricColorMeta {
-  color_light: string;
-  color_dark: string;
+    color_light: string;
+    color_dark: string;
 }
 
 /** Карта цветов метрик */

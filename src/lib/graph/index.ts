@@ -25,7 +25,6 @@ export type {
   GraphConfigResolved,
   GraphData,
   GraphPoint,
-  GraphRenderData,
   GraphTransform,
   GridLine,
   MetricColorMap,

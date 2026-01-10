@@ -56,18 +56,13 @@ export class GraphStore {
   }
 
   /** Все графики для конкретного процесса */
-  getGraphs(pid: bigint): Iterable<MetricGraph> {
+  getGraphs(pid: bigint): MetricGraph[] {
     const processData = this.prosessData.get(pid);
     if (!processData) return [];
 
-    return processData.points
-      .entries()
-      .map(([metricType, points]) => ({ pid, metricType, points }));
-  }
-
-  /** Проверка есть ли данные для конкретного процесса */
-  hasProcess(pid: bigint): boolean {
-    return this.prosessData.has(pid);
+    return Array.from(processData.points.entries())
+      .map(([metricType, points]) => ({ pid, metricType, points }))
+      .filter(graph => graph.points.length > 0);
   }
 
   /** Получить min/max для конкретного процесса */
