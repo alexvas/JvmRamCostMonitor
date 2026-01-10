@@ -5,7 +5,6 @@
 <script lang="ts">
   import {
     GraphRenderer,
-    type GraphRenderData,
     type MetricColorMap,
     type MetricNameMap,
   } from "$lib/graph";
@@ -82,16 +81,7 @@
       return /*svg*/ `<svg class="graph-plot"></svg>`;
     }
     const graphs = graphStore.getGraphs(pid);
-
-    const renderData: GraphRenderData = {
-      graphs: Array.from(graphs).map((g) => ({
-        metricType: g.metricType,
-        points: g.points.map((p) => ({ moment: p.moment, kb: p.kb })),
-      })),
-      processMinMax,
-    };
-
-    return renderer.renderToString(renderData);
+    return renderer.renderToString(processMinMax, graphs);
   });
 </script>
 

@@ -21,12 +21,6 @@ export interface ProcessMinMax {
   maxKb: number;
 }
 
-/** Полные данные для отрисовки метрик процесса */
-export interface GraphRenderData {
-  graphs: Iterable<GraphData>;
-  processMinMax: ProcessMinMax;
-}
-
 /** Конфигурация рендерера */
 export interface GraphConfig {
   containerWidth: number;

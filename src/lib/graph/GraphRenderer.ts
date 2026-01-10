@@ -5,11 +5,12 @@
 import type {
   GraphConfig,
   GraphConfigResolved,
-  GraphRenderData,
   GraphTransform,
   GridLine,
   MetricColorMap,
   MetricNameMap,
+  GraphData,
+  ProcessMinMax,
 } from './types';
 
 import {
@@ -87,7 +88,7 @@ export class GraphRenderer {
   /**
    * Вычислить трансформации для графика
    */
-  getTransform(data: GraphRenderData): GraphTransform {
+  getTransform(minMax: ProcessMinMax): GraphTransform {
     const { containerWidth, containerHeight, paddingPercent,
             bottomLabelSpace, leftLabelSpace, minTimeRange } = this.config;
     
@@ -98,11 +99,11 @@ export class GraphRenderer {
     const graphAreaHeight = containerHeight - paddingY * 2 - bottomLabelSpace;
     
     const timeRange = Math.max(
-      data.processMinMax.maxMoment - data.processMinMax.minMoment,
+      minMax.maxMoment - minMax.minMoment,
       minTimeRange
     );
     const dataWidth = timeRange;
-    const dataHeight = data.processMinMax.maxKb || 1;
+    const dataHeight = minMax.maxKb ?? 1;
 
     return {
       translateX: paddingX + leftLabelSpace,
@@ -119,8 +120,8 @@ export class GraphRenderer {
   /**
    * Вычислить вертикальные линии сетки (ось времени)
    */
-  getVerticalGridLines(data: GraphRenderData): GridLine[] {
-    const { minMoment, maxMoment } = data.processMinMax;
+  getVerticalGridLines(minMax: ProcessMinMax): GridLine[] {
+    const { minMoment, maxMoment } = minMax;
     const timeRange = maxMoment - minMoment;
 
     // Выбираем интервал
@@ -165,8 +166,8 @@ export class GraphRenderer {
   /**
    * Вычислить горизонтальные линии сетки (ось памяти)
    */
-  getHorizontalGridLines(data: GraphRenderData): GridLine[] {
-    const { maxKb } = data.processMinMax;
+  getHorizontalGridLines(minMax: ProcessMinMax): GridLine[] {
+    const { maxKb } = minMax;
 
     // Выбираем интервал
     let selectedInterval = GRID_INTERVALS_KB[GRID_INTERVALS_KB.length - 1];
@@ -349,11 +350,11 @@ export class GraphRenderer {
   /**
    * Сгенерировать все пути графиков
    */
-  renderGraphPaths(data: GraphRenderData): string {
-    const { minMoment, maxKb } = data.processMinMax;
+  renderGraphPaths(minMax: ProcessMinMax, graphs: Iterable<GraphData>): string {
+    const { minMoment, maxKb } = minMax;
     const paths: string[] = [];
     
-    for (const graph of data.graphs) {
+    for (const graph of graphs) {
       const path = this.renderGraphPath(graph.metricType, graph.points, minMoment, maxKb);
       if (path) paths.push(path);
     }
@@ -394,19 +395,19 @@ export class GraphRenderer {
   /**
    * Сгенерировать полный SVG как строку
    */
-  renderToString(data: GraphRenderData): string {
+  renderToString(minMax: ProcessMinMax, graphs: Iterable<GraphData>): string {
     const { containerWidth, containerHeight } = this.config;
     const viewBox = `0 0 ${containerWidth} ${containerHeight}`;
 
-    const transform = this.getTransform(data);
-    const verticalLines = this.getVerticalGridLines(data);
-    const horizontalLines = this.getHorizontalGridLines(data);
+    const transform = this.getTransform(minMax);
+    const verticalLines = this.getVerticalGridLines(minMax);
+    const horizontalLines = this.getHorizontalGridLines(minMax);
 
     const styles = this.renderStyles();
     const frame = this.renderFrame(transform);
     const vGridLines = this.renderVerticalGridLines(verticalLines, transform.dataHeight);
     const hGridLines = this.renderHorizontalGridLines(horizontalLines, transform.dataWidth);
-    const graphPaths = this.renderGraphPaths(data);
+    const graphPaths = this.renderGraphPaths(minMax, graphs);
     const xLabels = this.renderXLabels(verticalLines, transform);
     const yLabels = this.renderYLabels(horizontalLines, transform);
 
