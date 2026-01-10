@@ -214,8 +214,8 @@ export class GraphRenderer {
    * Преобразовать y-координату из килобайт в пиксели
    * (0 -> низ графика, maxKb -> верх)
    */
-  toY(kb: number, transform: GraphTransform): number {
-    return transform.translateY + transform.graphAreaHeight - kb * transform.scaleY;
+  toY(dataY: number, transform: GraphTransform): number {
+    return transform.translateY + dataY * transform.scaleY;
   }
 
   /**
@@ -380,15 +380,12 @@ export class GraphRenderer {
   /**
    * Сгенерировать подписи оси Y (память)
    */
-  renderYLabels(lines: GridLine[], data: GraphRenderData, transform: GraphTransform): string {
+  renderYLabels(lines: GridLine[], transform: GraphTransform): string {
     const frameColor = this.getFrameColor();
-    const maxKb = data.processMinMax.maxKb;
 
     return lines
       .map((line) => {
-        // Восстанавливаем kb из positionInDataUnits
-        const kb = maxKb - line.positionInDataUnits;
-        const y = this.toY(kb, transform);
+        const y = this.toY(line.positionInDataUnits, transform);
         return /*svg*/`<text class="grid-label-y" x="0" y="${y}" text-anchor="start" dominant-baseline="middle" fill="${frameColor}">${line.label}</text>`;
       })
       .join('\n  ');
@@ -411,7 +408,7 @@ export class GraphRenderer {
     const hGridLines = this.renderHorizontalGridLines(horizontalLines, transform.dataWidth);
     const graphPaths = this.renderGraphPaths(data);
     const xLabels = this.renderXLabels(verticalLines, transform);
-    const yLabels = this.renderYLabels(horizontalLines, data, transform);
+    const yLabels = this.renderYLabels(horizontalLines, transform);
 
     return /*svg*/`<svg class="graph-plot" viewBox="${viewBox}" preserveAspectRatio="none">
   ${styles}
