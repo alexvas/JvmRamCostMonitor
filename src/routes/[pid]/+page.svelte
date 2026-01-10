@@ -26,7 +26,9 @@
 <style>
   .graph-container {
     width: 100%;
-    height: 500px;
+    flex: 1;
+    min-height: 0; /* важно для flexbox с overflow */
     overflow: hidden;
+    display: flex; /* чтобы GraphPlot растягивался */
   }
 </style>

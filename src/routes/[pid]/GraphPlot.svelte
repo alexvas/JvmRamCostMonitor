@@ -109,6 +109,10 @@
   $effect(() => {
     const element = svgElement;
     if (!element || typeof window === "undefined") return;
+
+    let pendingUpdateCounter = 0;
+    const DEBOUNCE_DELAY_MS = 16; // примерно один кадр
+
     const updateSizes = () => {
       const rect = element.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
@@ -116,10 +120,34 @@
         containerHeight = rect.height;
       }
     };
-    updateSizes();
-    const resizeObserver = new ResizeObserver(updateSizes);
+
+    // Первоначальное обновление через debounce механизм
+    pendingUpdateCounter++;
+    setTimeout(() => {
+      pendingUpdateCounter--;
+      if (pendingUpdateCounter <= 0) {
+        updateSizes();
+      }
+    }, DEBOUNCE_DELAY_MS);
+
+    const resizeObserver = new ResizeObserver(() => {
+      pendingUpdateCounter++; // инкрементируем счетчик при каждом событии
+      setTimeout(() => {
+        pendingUpdateCounter--; // декрементируем при выполнении
+        if (pendingUpdateCounter === 0) {
+          // Выполняем реальную логику только когда счетчик достиг нуля
+          // (т.е. все запланированные обработчики выполнились)
+          updateSizes();
+        }
+        // Если счетчик > 0, ничего не делаем - есть еще запланированные обработчики
+      }, DEBOUNCE_DELAY_MS);
+    });
+
     resizeObserver.observe(element);
-    return () => resizeObserver.disconnect();
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   });
 
   // ViewBox равен размерам контейнера (1:1)
