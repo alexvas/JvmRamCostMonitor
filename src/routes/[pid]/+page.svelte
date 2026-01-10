@@ -3,9 +3,7 @@
 {:else}
   <h2>{pidStr} {process.display_name}</h2>
   {#if hasGraph}
-    <div class="graph-container">
-      <GraphPlot pid={pid!} />
-    </div>
+    <GraphPlot pid={pid!} />
   {/if}
 {/if}
 
@@ -28,13 +26,3 @@
     pid ? graphStore.hasGraphDataForProcess(pid) : false,
   );
 </script>
-
-<style>
-  .graph-container {
-    width: 100%;
-    flex: 1;
-    min-height: 0; /* важно для flexbox с overflow */
-    overflow: hidden;
-    display: flex; /* чтобы GraphPlot растягивался */
-  }
-</style>
