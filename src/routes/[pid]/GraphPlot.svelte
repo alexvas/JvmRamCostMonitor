@@ -59,7 +59,7 @@
     <text
       class="grid-label-x"
       x={toX(line.xInDataUnits)}
-      y={containerHeight - 25}
+      y={containerHeight - BOTTOM_LABEL_SPACE}
       text-anchor="middle"
       dominant-baseline="hanging"
       fill={frameColor}
@@ -71,9 +71,9 @@
   {#each gridHorizontalLines as line}
     <text
       class="grid-label-y"
-      x={100}
-      y={toYForLabel(line.bytes / 1024.0)}
-      text-anchor="end"
+      x="0"
+      y={toY(line.bytes / 1024)}
+      text-anchor="start"
       dominant-baseline="middle"
       fill={frameColor}
     >
@@ -154,9 +154,9 @@
   });
 
   // Константы для отступов
-  const PADDING_PERCENT = 0.1; // 10% со всех сторон
+  const PADDING_PERCENT = 0.05; // 5% со всех сторон
   const BOTTOM_LABEL_SPACE = 25; // пикселей для подписей снизу
-  const LEFT_LABEL_SPACE = 30; // пикселей для подписей слева
+  const LEFT_LABEL_SPACE = 20; // пикселей для подписей слева
 
   // Размеры области графика (после вычитания отступов)
   let graphAreaWidth = $derived.by(() => {
@@ -216,7 +216,7 @@
   // Функция для подписей ординаты: прямое преобразование без инверсии
   // kilobytes=0 -> низ графика (большая координата Y)
   // kilobytes=max -> верх графика (маленькая координата Y)
-  function toYForLabel(kilobytes: number): number {
+  function toY(kilobytes: number): number {
     return graphTranslateY + graphAreaHeight - kilobytes * graphScaleY;
   }
 
