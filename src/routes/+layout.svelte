@@ -28,6 +28,7 @@
     GraphQueues,
     JvmProcessListResponse,
   } from "$lib/generated/proto/protocol";
+  import { listenGraphQueues } from "$lib/ProtoAdapter";
 
   let { children } = $props();
   let followingPids = $state<bigint[]>([]);
@@ -58,16 +59,8 @@
   setContext("graphVersion", () => graphVersion);
   import { graphStore } from "$lib/GraphStore";
 
-  listen<GraphQueues>("graph-queues-updated", (event) => {
-    const pid =
-      typeof event.payload.pid === "bigint"
-        ? event.payload.pid
-        : BigInt(event.payload.pid);
-    const queues = event.payload.queues;
-    for (const queue of queues) {
-      graphStore.put(pid, queue.metric_type, queue.points);
-    }
-    // Чтобы графики перерисовывались
+  listenGraphQueues((pid, metricType, points) => {
+    graphStore.put(pid, metricType, points);
     graphVersion++;
   });
 

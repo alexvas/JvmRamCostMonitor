@@ -83,8 +83,7 @@
 </svg>
 
 <script lang="ts">
-  import { type GraphPoint, graphStore } from "$lib/GraphStore";
-  import { MetricType } from "$lib/generated/proto/protocol";
+  import { type GraphPoint, graphStore, MetricType } from "$lib/GraphStore";
   import { getContext } from "svelte";
   import { graphMetaMap } from "$lib/GraphMeta";
   let { pid }: { pid: bigint } = $props();

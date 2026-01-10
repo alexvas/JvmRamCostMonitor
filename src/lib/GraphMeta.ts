@@ -1,4 +1,4 @@
-import { MetricType } from "./generated/proto/protocol";
+import { MetricType } from "./GraphStore";
 
 export interface GraphMeta {
   color_light: string;
@@ -15,5 +15,4 @@ export const graphMetaMap: Record<MetricType, GraphMeta> = {
   [MetricType.HEAP_COMMITTED]: { color_light: "cyan", color_dark: "cyan" },
   [MetricType.NMT_USED]: { color_light: "rgb(128, 0, 255)", color_dark: "rgb(128, 0, 255)" },
   [MetricType.NMT_COMMITTED]: { color_light: "rgb(32, 42, 69)", color_dark: "rgb(0, 155, 255)" },
-  [MetricType.UNRECOGNIZED]: { color_light: "gray", color_dark: "gray" },
 };

@@ -17,37 +17,19 @@
 </div>
 
 <script lang="ts">
+  import { MetricType } from "$lib/GraphStore";
   import {
-    MetricType,
-    SetVisibleRequest,
-    SetInvisibleRequest,
-    ApplicableMetricsResponse,
-  } from "$lib/generated/proto/protocol";
-  import { invoke } from "@tauri-apps/api/core";
+    setVisible,
+    setInvisible,
+    getApplicableMetrics,
+  } from "$lib/ProtoAdapter";
 
   let { allMetricTypes, visibleMetrics } = $props();
 
-  async function getApplicableMetrics() {
-    const response = await invoke<ApplicableMetricsResponse>(
-      "get_applicable_metrics",
-    );
-    console.log("get applicable metrics response", response);
-    return response.types;
-  }
   getApplicableMetrics().then((types) => {
     allMetricTypes = types;
     visibleMetrics = types;
   });
-
-  async function setVisible(mt: MetricType) {
-    const request = SetVisibleRequest.create({ metric_type: mt });
-    await invoke("set_visible", { request });
-  }
-
-  async function setInvisible(mt: MetricType) {
-    const request = SetInvisibleRequest.create({ metric_type: mt });
-    await invoke("set_invisible", { request });
-  }
 
   let oldVisibleMetrics: MetricType[] | undefined = undefined;
   $effect(() => {

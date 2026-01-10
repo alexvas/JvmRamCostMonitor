@@ -1,5 +1,15 @@
-import type { MetricType, GraphPoint as ProtoGraphPoint } from "$lib/generated/proto/protocol";
-import type { Timestamp } from "./generated/google/protobuf/timestamp";
+/** Собственный enum для типов метрик (без UNRECOGNIZED) */
+export enum MetricType {
+  RSS = 0,
+  PSS = 1,
+  USS = 2,
+  WS = 3,
+  PB = 4,
+  HEAP_USED = 5,
+  HEAP_COMMITTED = 6,
+  NMT_USED = 7,
+  NMT_COMMITTED = 8,
+}
 
 /** Лимит точек на каждую метрику для каждого процесса */
 const SIZE_LIMIT = 10_000;
@@ -112,7 +122,7 @@ export class GraphStore {
   }
 
   /** Добавить точки для метрики процесса */
-  put(pid: bigint, metricType: MetricType, points: ProtoGraphPoint[]): void {
+  put(pid: bigint, metricType: MetricType, points: GraphPoint[]): void {
     for (const point of points) {
       this.addPoint(pid, metricType, point);
     }
@@ -128,21 +138,7 @@ export class GraphStore {
     this.data.clear();
   }
 
-  private covertMoment(moment: Timestamp): Date {
-    const millis = Number(moment.seconds) * 1000 + (moment.nanos ?? 0) / 1_000_000;
-    return new Date(millis);
-  }
-
-  private addPoint(pid: bigint, metricType: MetricType, input: ProtoGraphPoint): void {
-    if (input.moment === undefined) {
-      throw new Error("GraphPoint moment is undefined");
-    }
-    if (input.bytes < 0n) {
-      throw new Error(`Bytes in GraphPoint must be positive: ${input.bytes}`);
-    }
-
-    // input.moment приходит как Timestamp {seconds, nanos} или Date
-    const moment = this.covertMoment(input.moment);
+  private addPoint(pid: bigint, metricType: MetricType, input: GraphPoint): void {
 
     let processData = this.data.get(pid);
     if (!processData) {
@@ -161,7 +157,7 @@ export class GraphStore {
       processData.metrics.set(metricType, points);
     }
 
-    const ts = moment.getTime();
+    const ts = input.moment.getTime();
 
     // Если такой момент уже есть — пропускаем
     if (points.has(ts)) {
@@ -171,11 +167,11 @@ export class GraphStore {
     points.set(ts, input.bytes);
 
     // Обновляем min/max по времени для процесса
-    if (moment < processData.minMoment) {
-      processData.minMoment = moment;
+    if (input.moment < processData.minMoment) {
+      processData.minMoment = input.moment;
     }
-    if (moment > processData.maxMoment) {
-      processData.maxMoment = moment;
+    if (input.moment > processData.maxMoment) {
+      processData.maxMoment = input.moment;
     }
 
     // Обновляем max bytes для процесса
