@@ -1,5 +1,5 @@
 [versions]
-jdk = "21"
+jdk = "17"
 jvmram = "1.0.3"
 slf4j = "2.0.17"
 jna = "5.16.0"
