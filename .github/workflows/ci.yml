@@ -36,7 +36,7 @@ jobs:
 
   build-ubuntu:
     needs: [build-minified-jar]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
@@ -47,8 +47,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: jvm-ram-cost-minified-jar
-          path: ./dist-app-backend/build/minified/
-     
+          path: ./dist-app-backend/build/minified/     
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Enable Corepack
         run: corepack enable
 
@@ -71,6 +76,20 @@ jobs:
         run: |
           echo '{"version": "${{ steps.version.outputs.version }}"}' > /tmp/tauri-versioned.conf.json
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libglib2.0-dev
+
       - name: Build Tauri application
         run: |
           yarn tauri build --no-bundle
@@ -88,7 +107,7 @@ jobs:
 
   build-windows:
     needs: [build-minified-jar]
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: read
       packages: write
@@ -101,6 +120,11 @@ jobs:
           name: jvm-ram-cost-minified-jar
           path: ./dist-app-backend/build/minified/
      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Enable Corepack
         run: corepack enable
 
@@ -123,6 +147,9 @@ jobs:
         run: |
           $json = @{version = "${{ steps.version.outputs.version }}" } | ConvertTo-Json -Compress
           $json | Out-File -FilePath "$env:TEMP\tauri-versioned.conf.json" -Encoding utf8
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build Tauri application
         run: |
