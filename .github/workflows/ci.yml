@@ -156,11 +156,18 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Set PROTOC environment variable
+      - name: Download and install protoc
         run: |
-          $protocPath = Resolve-Path "node_modules\.bin\protoc.exe" | Select-Object -ExpandProperty Path
-          Write-Host "PROTOC=$protocPath" >> $env:GITHUB_ENV
-          Write-Host "Found protoc at: $protocPath"
+          $PROTOC_VERSION = "27.1"
+          $PROTOC_ZIP = "protoc-${PROTOC_VERSION}-win64.zip"
+          $PROTOC_DIR = "$env:LOCALAPPDATA\protoc"
+          Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}" -OutFile $PROTOC_ZIP
+          Expand-Archive -Path $PROTOC_ZIP -DestinationPath $PROTOC_DIR -Force
+          $PROTOC_PATH = "$PROTOC_DIR\bin\protoc.exe"
+          Write-Host "PROTOC=$PROTOC_PATH" >> $env:GITHUB_ENV
+          Write-Host "$PROTOC_DIR\bin" >> $env:GITHUB_PATH
+          & $PROTOC_PATH --version
+          Remove-Item $PROTOC_ZIP
 
       - name: Build Tauri application
         run: |
