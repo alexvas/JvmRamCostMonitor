@@ -157,6 +157,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Download and install protoc
+        id: protoc
         run: |
           $PROTOC_VERSION = "27.1"
           $PROTOC_ZIP = "protoc-${PROTOC_VERSION}-win64.zip"
@@ -164,12 +165,15 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}" -OutFile $PROTOC_ZIP
           Expand-Archive -Path $PROTOC_ZIP -DestinationPath $PROTOC_DIR -Force
           $PROTOC_PATH = "$PROTOC_DIR\bin\protoc.exe"
-          Write-Host "PROTOC=$PROTOC_PATH" >> $env:GITHUB_ENV
-          Write-Host "$PROTOC_DIR\bin" >> $env:GITHUB_PATH
+          "PROTOC=$PROTOC_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PROTOC_PATH=$PROTOC_PATH" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "$PROTOC_DIR\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & $PROTOC_PATH --version
           Remove-Item $PROTOC_ZIP
 
       - name: Build Tauri application
+        env:
+          PROTOC: ${{ steps.protoc.outputs.PROTOC_PATH }}
         run: |
           yarn tauri build --no-bundle
 
