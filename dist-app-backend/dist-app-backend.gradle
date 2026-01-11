@@ -2,6 +2,15 @@ plugins {
     alias(libs.plugins.jlink)
 }
 
+configurations {
+    proguard
+}
+
+dependencies {
+    proguard 'com.guardsquare:proguard-base:7.8.2'
+}
+
+// 
 application {
     mainModule = 'jvmram.app.backend.dist'
     mainClass  = 'jvmram.dist.Main'
@@ -29,17 +38,102 @@ jlink {
     }
 }
 
-jpackage {
-    jpackageHome = System.getProperty('java.home')
+// Fat JAR задача
+tasks.register('fatJar', Jar) {
+    dependsOn jar
+    archiveClassifier = 'fat'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude 'com/google/gson/**'
+    exclude 'com/google/common/hash/**'
+    exclude 'com/google/common/net/**'
+    exclude 'com/google/common/reflect/**'
+    exclude 'com/google/common/eventbus/**'
+    exclude 'com/google/common/cache/**'
+    exclude 'com/google/protobuf/util/**'
+    exclude 'com/sun/jna/platform/dnd/**'
+
+    // Исключаем module-info.class для корректной работы jdeps/jpackage
+    exclude 'module-info.class'
+    exclude '**/module-info.class'
+
+    with jar
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
+}
+
+// jpackage с fat JAR
+tasks.register('jpackageFat', Exec) {
+    dependsOn fatJar
+    group = 'build'
+    description = 'Create installable package using jpackage with fat JAR'
     
-    imageName = 'jvm-ram-cost'
-    appVersion = libs.versions.jvmram
-    vendor = 'Alexander Vasilev'
+    doFirst {
+        def javaHome = System.getProperty('java.home')
+        def jpackageExe = new File(javaHome, 'bin/jpackage')
+        if (!jpackageExe.exists()) {
+            throw new GradleException("jpackage not found at ${jpackageExe.absolutePath}")
+        }
+        
+        def fatJarFile = fatJar.archiveFile.get().asFile
+        def outputDir = file("${buildDir}/jpackage")
+        outputDir.mkdirs()
+        
+        def libsDir = file("${buildDir}/libs")
+        
+        commandLine = [
+            jpackageExe.absolutePath,
+            '--input', libsDir.absolutePath,
+            '--main-jar', fatJarFile.name,
+            '--main-class', application.mainClass.get(),
+            '--name', 'jvm-ram-cost',
+            '--app-version', libs.versions.jvmram.get(),
+            '--vendor', 'Alexander Vasilev',
+            '--type', 'deb',
+            '--linux-menu-group', 'Utilities',
+            '--linux-shortcut',
+            '--dest', outputDir.absolutePath
+        ]
+    }
+}
 
-    installerType = 'deb' // или dmg, deb, rpm, msi
+// ProGuard минификация
+tasks.register('proguardMinify', JavaExec) {
+    dependsOn fatJar
+    group = 'build'
+    description = 'Minify JAR using ProGuard'
 
-    installerOptions = [
-        '--linux-menu-group', 'Utilities',
-        '--linux-shortcut'
-    ]
+    classpath = configurations.proguard
+
+    mainClass = 'proguard.ProGuard'
+
+    doFirst {
+        def javaHome = System.getProperty('java.home')
+        def outJar = layout.buildDirectory.file("libs/${project.name}-min.jar").get().asFile
+        def rulesFile = file('proguard-rules.pro')
+
+        outJar.parentFile.mkdirs()
+
+        // Создаем временный файл с полной конфигурацией
+        def tempRulesFile = file("${buildDir}/proguard-temp.pro")
+        tempRulesFile.parentFile.mkdirs()
+        def content = rulesFile.text + "\n\n" +
+                "-injars ${fatJar.archiveFile.get().asFile.absolutePath}\n" +
+                "-outjars ${outJar.absolutePath}\n" +
+                "-libraryjars ${javaHome}/jmods/java.base.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/java.logging.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/java.xml.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/java.desktop.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/java.management.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/java.naming.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/java.security.jgss.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/jdk.attach.jmod(!**.jar;!module-info.class)\n" +
+                "-libraryjars ${javaHome}/jmods/jdk.unsupported.jmod(!**.jar;!module-info.class)\n"
+
+        tempRulesFile.text = content
+        args = ['@' + tempRulesFile.absolutePath]
+    }
 }

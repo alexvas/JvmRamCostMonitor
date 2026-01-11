@@ -15,9 +15,7 @@ jspecify = "org.jspecify:jspecify:1.0.0"
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 
-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
-grpc-services = { module = "io.grpc:grpc-services", version.ref = "grpc" }
-grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-bom = { module = "io.grpc:grpc-bom", version.ref = "grpc" }
 
 [plugins]
 jlink  = "org.beryx.jlink:3.2.0"
