@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-minified-jar:
+    name: Собираем минифицированный JAR
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,6 +36,7 @@ jobs:
           retention-days: 1
 
   build-ubuntu:
+    name: Собираем Tauri DEB для Ubuntu
     needs: [build-minified-jar]
     runs-on: ubuntu-22.04
     permissions:
@@ -106,6 +108,7 @@ jobs:
           retention-days: 1
 
   build-windows:
+    name: Собираем Tauri MSI для Windows
     needs: [build-minified-jar]
     runs-on: windows-2022
     permissions:
@@ -167,7 +170,7 @@ jobs:
           retention-days: 1
 
   release:
-    name: Create Release
+    name: Создаем релиз
     needs: [build-ubuntu, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
