@@ -44,6 +44,8 @@ impl serde::Serialize for Error {
 
 const LOCALHOST_V4: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
 const GRPC_SERVER_PORT: u16 = 53535;
+const INITIAL_RETRY_DELAY_MS: u64 = 1;
+const MAX_RETRY_DELAY_MS: u64 = 1000;
 
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -232,32 +234,76 @@ use crate::google::protobuf::Empty;
 async fn listen_available_jvm_processes_updated(
     app: AppHandle,
     state: Arc<AppState>,
+) {
+    let mut retry_delay = std::time::Duration::from_millis(INITIAL_RETRY_DELAY_MS);
+    
+    loop {
+        match try_listen_jvm_processes(&app, &state).await {
+            Ok(()) => {
+                // Стрим завершился нормально, сбрасываем таймаут и переподключаемся
+                retry_delay = std::time::Duration::from_millis(INITIAL_RETRY_DELAY_MS);
+            }
+            Err(e) => {
+                eprintln!("gRPC error (jvm_processes): {}, retry in {:?}", e, retry_delay);
+            }
+        }
+        tokio::time::sleep(retry_delay).await;
+        retry_delay = std::cmp::min(
+            retry_delay * 2,
+            std::time::Duration::from_millis(MAX_RETRY_DELAY_MS)
+        );
+    }
+}
+
+async fn try_listen_jvm_processes(
+    app: &AppHandle,
+    state: &Arc<AppState>,
 ) -> Result<(), Error> {
-    let mut client: AppBackendClient<Channel> = state.get_client().await;
+    let mut client = state.get_client().await;
     let response = client.listen_jvm_process_list(Empty::default()).await?;
     let mut stream = response.into_inner();
-
+    
     while let Some(response) = stream.message().await? {
-        // println!("listen_jvm_process_list message: {:?}", response);
         app.emit("available-jvm-processes-updated", &response).unwrap();
     }
-
     Ok(())
 }
 
 async fn listen_graph_queues(
     app: AppHandle,
     state: Arc<AppState>,
+) {
+    let mut retry_delay = std::time::Duration::from_millis(INITIAL_RETRY_DELAY_MS);
+    
+    loop {
+        match try_listen_graph_queues(&app, &state).await {
+            Ok(()) => {
+                // Стрим завершился нормально, сбрасываем таймаут и переподключаемся
+                retry_delay = std::time::Duration::from_millis(INITIAL_RETRY_DELAY_MS);
+            }
+            Err(e) => {
+                eprintln!("gRPC error (graph_queues): {}, retry in {:?}", e, retry_delay);
+            }
+        }
+        tokio::time::sleep(retry_delay).await;
+        retry_delay = std::cmp::min(
+            retry_delay * 2,
+            std::time::Duration::from_millis(MAX_RETRY_DELAY_MS)
+        );
+    }
+}
+
+async fn try_listen_graph_queues(
+    app: &AppHandle,
+    state: &Arc<AppState>,
 ) -> Result<(), Error> {
-    let mut client: AppBackendClient<Channel> = state.get_client().await;
+    let mut client = state.get_client().await;
     let response = client.listen_graph_queues(Empty::default()).await?;
     let mut stream = response.into_inner();
-
+    
     while let Some(response) = stream.message().await? {
-        // println!("listen_graph_queues message: {:?}", response);
         app.emit("graph-queues-updated", &response).unwrap();
     }
-
     Ok(())
 }
 
@@ -287,15 +333,11 @@ pub fn run() {
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = listen_available_jvm_processes_updated(app_handle, state).await {
-                    eprintln!("Error in listen_available_jvm_processes_updated: {}", e);
-                }
+                listen_available_jvm_processes_updated(app_handle, state).await;
             });
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = listen_graph_queues(app_handle, state2).await {
-                    eprintln!("Error in listen_graph_queues: {}", e);
-                }
+                listen_graph_queues(app_handle, state2).await;
             });
 
             Ok(())
