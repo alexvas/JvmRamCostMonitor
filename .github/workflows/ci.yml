@@ -260,7 +260,8 @@ jobs:
             **Debian/Ubuntu:**
             Скачайте `.deb` файл из раздела Assets и установите:
             ```bash
-            sudo dpkg -i jvm-ram-cost_*.deb
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/jvm-ram-cost_${{ steps.version.outputs.version }}_amd64.deb
+            sudo dpkg -i jvm-ram-cost_${{ steps.version.outputs.version }}_amd64.deb
             ```  
             **Windows:**
             Скачайте `.msi` файл из раздела Assets и запустите установщик.
