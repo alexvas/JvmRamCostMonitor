@@ -33,7 +33,7 @@ public class GraphPointQueuesImpl implements GraphPointQueuesWritable {
         }
 
         var key = new GraphKey(metricType, pid);
-        var deque = data.computeIfAbsent(key, _ -> {
+        var deque = data.computeIfAbsent(key, ignored -> {
             LOG.debug("creating entry for a {}", key);
             return new LinkedBlockingDeque<>();
         });

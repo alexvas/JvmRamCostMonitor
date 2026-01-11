@@ -6,22 +6,8 @@ import jvmram.controller.JmxService;
 import jvmram.controller.ProcessController;
 import jvmram.model.graph.GraphPointQueuesWritable;
 import jvmram.visibility.MetricVisibility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.invoke.MethodHandles;
 
 public class JvmRunCost {
-    private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    static void main() {
-        Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
-
-        var main = new JvmRunCost();
-        main.setup(53535);
-        main.blockUntilShutdown();
-    }
-
     private volatile JvmRamBackendManager backendManager;
 
     public void setup(int port) {

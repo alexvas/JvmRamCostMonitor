@@ -1,5 +1,11 @@
 plugins {
-    alias(libs.plugins.jlink)
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 configurations {
@@ -21,21 +27,6 @@ dependencies {
     runtimeOnly libs.slf4j.simple
 
     implementation project(':app-backend')
-}
-
-jlink {
-    imageName = 'jvm-ram-cost-runtime'
-
-    options = [
-        '--strip-debug',
-        '--no-header-files',
-        '--no-man-pages',
-        '--compress=0' // и так будет сжат в инсталлере
-    ]
-
-    launcher {
-        name = 'jvm-ram-cost'
-    }
 }
 
 // Fat JAR задача
@@ -109,6 +100,10 @@ tasks.register('proguardMinify', JavaExec) {
     group = 'build'
     description = 'Minify JAR using ProGuard'
 
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+
     classpath = configurations.proguard
 
     mainClass = 'proguard.ProGuard'
@@ -117,7 +112,7 @@ tasks.register('proguardMinify', JavaExec) {
     outputs.file(outJar)
 
     doFirst {
-        def javaHome = System.getProperty('java.home')
+        def javaHome = javaLauncher.get().metadata.installationPath.asFile.absolutePath
         def outJarFile = outJar.get().asFile
         def rulesFile = file('proguard-rules.pro')
 

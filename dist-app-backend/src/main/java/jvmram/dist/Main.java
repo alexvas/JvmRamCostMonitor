@@ -11,8 +11,8 @@ public class Main {
 
     private static final int DEFAULT_PORT = 53535;
 
-    static void main() {
-        Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
+    public static void main(String[] args) {
+        Thread.setDefaultUncaughtExceptionHandler((ignored, e) -> LOG.error("Unexpected exception: ", e));
 
         var main = new JvmRunCost();
         main.setup(DEFAULT_PORT);

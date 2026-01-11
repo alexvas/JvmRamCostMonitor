@@ -18,5 +18,4 @@ jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 grpc-bom = { module = "io.grpc:grpc-bom", version.ref = "grpc" }
 
 [plugins]
-jlink  = "org.beryx.jlink:3.2.0"
 protobuf = "com.google.protobuf:0.9.6"
