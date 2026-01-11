@@ -3,7 +3,7 @@ plugins {
 }
 
 application {
-    mainModule = 'jvmram.app.swing.dist'
+    mainModule = 'jvmram.app.backend.dist'
     mainClass  = 'jvmram.dist.Main'
 }
 
@@ -11,12 +11,11 @@ dependencies {
     implementation libs.slf4j.api
     runtimeOnly libs.slf4j.simple
 
-    implementation project(':app-swing-ui')
     implementation project(':app-backend')
 }
 
 jlink {
-    imageName = 'jvm-ram-cost-monitor-runtime'
+    imageName = 'jvm-ram-cost-runtime'
 
     options = [
         '--strip-debug',
@@ -26,14 +25,14 @@ jlink {
     ]
 
     launcher {
-        name = 'jvm-ram-cost-monitor'
+        name = 'jvm-ram-cost'
     }
 }
 
 jpackage {
     jpackageHome = System.getProperty('java.home')
     
-    imageName = 'jvm-ram-cost-monitor'
+    imageName = 'jvm-ram-cost'
     appVersion = libs.versions.jvmram
     vendor = 'Alexander Vasilev'
 

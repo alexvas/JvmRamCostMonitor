@@ -9,11 +9,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app-backend" />
-            <option value="$PROJECT_DIR$/app-swing-ui" />
             <option value="$PROJECT_DIR$/core" />
-            <option value="$PROJECT_DIR$/dist-app-swing-ui" />
+            <option value="$PROJECT_DIR$/dist-app-backend" />
             <option value="$PROJECT_DIR$/model" />
-            <option value="$PROJECT_DIR$/proto" />
           </set>
         </option>
       </GradleProjectSettings>

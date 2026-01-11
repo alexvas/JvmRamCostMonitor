@@ -1,7 +1,6 @@
 package jvmram.dist;
 
 import jvmram.backend.JvmRunCost;
-import jvmram.swing.SwingLifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,15 +11,11 @@ public class Main {
 
     private static final int DEFAULT_PORT = 53535;
 
-    void main() {
+    static void main() {
         Thread.setDefaultUncaughtExceptionHandler((_, e) -> LOG.error("Unexpected exception: ", e));
 
-        var backend = new JvmRunCost();
-        backend.setup(DEFAULT_PORT);
-
-        @SuppressWarnings("resource")
-        var swing = new SwingLifecycle();
-        swing.setup(DEFAULT_PORT);
-        Runtime.getRuntime().addShutdownHook(new Thread(swing::close));
+        var main = new JvmRunCost();
+        main.setup(DEFAULT_PORT);
+        main.blockUntilShutdown();
     }
 }
