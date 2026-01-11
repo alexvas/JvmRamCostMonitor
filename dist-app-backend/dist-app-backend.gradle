@@ -54,6 +54,9 @@ tasks.register('fatJar', Jar) {
     exclude 'com/google/common/cache/**'
     exclude 'com/google/protobuf/util/**'
     exclude 'com/sun/jna/platform/dnd/**'
+    
+    // gRPC JNDI resolver (требует java.naming, не нужен)
+    exclude 'io/grpc/internal/JndiResourceResolverFactory*'
 
     // Исключаем module-info.class для корректной работы jdeps/jpackage
     exclude 'module-info.class'

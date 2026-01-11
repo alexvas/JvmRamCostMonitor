@@ -128,3 +128,7 @@
 
 # com.sun.tools.attach classes are in jdk.attach module
 -dontwarn com.sun.tools.attach.**
+
+# Exclude JNDI resolver (not needed, causes issues with java.naming)
+-assumenosideeffects class io.grpc.internal.JndiResourceResolverFactory { *; }
+-assumenosideeffects class io.grpc.internal.JndiResourceResolverFactory$* { *; }
