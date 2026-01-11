@@ -30,3 +30,6 @@ tokio = { version = "1.49.0", features = ["macros"] }
 tonic-prost = "0.14.2"
 thiserror = "2.0.17"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+

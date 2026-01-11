@@ -1882,6 +1882,7 @@ dependencies = [
 name = "jvm-ram-cost"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "prost",
  "serde",
  "serde_json",

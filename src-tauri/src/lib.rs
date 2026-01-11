@@ -47,6 +47,54 @@ const GRPC_SERVER_PORT: u16 = 53535;
 
 use std::net::{IpAddr, Ipv4Addr};
 
+fn find_java() -> Result<std::path::PathBuf, String> {
+    // Пробуем java в PATH
+    if let Ok(output) = std::process::Command::new("java").arg("-version").output() {
+        if output.status.success() {
+            return Ok("java".into());
+        }
+    }
+    
+    // Пробуем $JAVA_HOME/bin/java
+    if let Ok(java_home) = std::env::var("JAVA_HOME") {
+        let java_path = std::path::PathBuf::from(java_home).join("bin/java");
+        if java_path.exists() {
+            return Ok(java_path);
+        }
+    }
+    
+    Err("Java не найдена. Установите Java или задайте JAVA_HOME".into())
+}
+
+fn start_backend(app: &tauri::App) -> Result<std::process::Child, String> {
+    let java = find_java()?;
+    let resource_path = app.path().resource_dir()
+        .map_err(|e| format!("Не удалось получить путь к ресурсам: {}", e))?
+        .join("jvm-ram-cost.jar");
+    
+    if !resource_path.exists() {
+        return Err(format!("JAR файл не найден: {:?}", resource_path));
+    }
+    
+    let mut cmd = std::process::Command::new(java);
+    cmd.arg("-jar").arg(&resource_path);
+    
+    // На Unix: создаём новую process group, чтобы можно было убить все дочерние процессы
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        unsafe {
+            cmd.pre_exec(|| {
+                libc::setpgid(0, 0);
+                Ok(())
+            });
+        }
+    }
+    
+    cmd.spawn()
+        .map_err(|e| format!("Не удалось запустить бэкенд: {}", e))
+}
+
 fn create_grpc_client() -> AppBackendClient<Channel> {
     let uri = format!("http://{}:{}", LOCALHOST_V4, GRPC_SERVER_PORT)
         .parse::<Uri>()
@@ -58,12 +106,14 @@ fn create_grpc_client() -> AppBackendClient<Channel> {
 
 struct AppState {
     client: OnceCell<AppBackendClient<Channel>>,
+    backend_process: std::sync::Mutex<Option<std::process::Child>>,
 }
 
 impl AppState {
     fn new() -> Self {
         Self {
             client: OnceCell::new(),
+            backend_process: std::sync::Mutex::new(None),
         }
     }
 
@@ -72,6 +122,42 @@ impl AppState {
             .get_or_init(|| async { create_grpc_client() })
             .await
             .clone()
+    }
+}
+
+impl AppState {
+    fn kill_backend(&self) {
+        if let Ok(mut process) = self.backend_process.lock() {
+            if let Some(mut child) = process.take() {
+                #[cfg(unix)]
+                {
+                    // На Unix убиваем всю process group
+                    unsafe {
+                        let pgid = libc::getpgid(child.id() as i32);
+                        if pgid > 0 {
+                            let _ = libc::killpg(pgid, libc::SIGTERM);
+                            // Даём время на graceful shutdown
+                            std::thread::sleep(std::time::Duration::from_millis(500));
+                            let _ = libc::killpg(pgid, libc::SIGKILL);
+                        } else {
+                            // Если не удалось получить pgid, просто убиваем процесс
+                            let _ = child.kill();
+                        }
+                    }
+                }
+                #[cfg(not(unix))]
+                {
+                    let _ = child.kill();
+                }
+                let _ = child.wait();
+            }
+        }
+    }
+}
+
+impl Drop for AppState {
+    fn drop(&mut self) {
+        self.kill_backend();
     }
 }
 
@@ -181,9 +267,23 @@ use tauri::{Builder, Manager};
 pub fn run() {
     Builder::default()
         .setup(|app| {
+            // Запускаем Java бэкенд
+            let backend_child = match start_backend(app) {
+                Ok(child) => child,
+                Err(e) => {
+                    eprintln!("Ошибка запуска бэкенда: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
             let state = Arc::new(AppState::new());
+            *state.backend_process.lock().unwrap() = Some(backend_child);
             app.manage(state.clone());
+
             let state2 = state.clone();
+
+
+
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -207,6 +307,14 @@ pub fn run() {
             set_invisible,
             set_following_pids,
         ])
+        .on_window_event(|_window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                // Получаем state из app через window
+                if let Some(state) = _window.app_handle().try_state::<Arc<AppState>>() {
+                    state.kill_backend();
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
