@@ -49,9 +49,11 @@ jobs:
           name: jvm-ram-cost-minified-jar
           path: ./dist-app-backend/build/minified/
      
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Yarn install
-        run: |
-          yarn install
+        run: yarn install
 
       - name: Generate protobuf files for TypeScript (Linux)
         run: |
@@ -99,9 +101,11 @@ jobs:
           name: jvm-ram-cost-minified-jar
           path: ./dist-app-backend/build/minified/
      
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Yarn install
-        run: |
-          yarn install
+        run: yarn install
 
       - name: Generate protobuf files for TypeScript (Windows)
         run: |
