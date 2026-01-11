@@ -10,8 +10,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "WEBKIT_DISABLE_COMPOSITING_MODE=1 tauri",
-    "proto:gen": "./scripts/proto-gen.sh",
-    "proto:gen:win": ".scripts/proto-gen.bat"
+    "proto:gen": "protoc --ts_proto_out=src/lib/generated --ts_proto_opt=snakeToCamel=false --ts_proto_opt=outputEncodeMethods=false --ts_proto_opt=outputClientImpl=false --ts_proto_opt=outputServices=false --ts_proto_opt=forceLong=bigint --ts_proto_opt=useDate=false proto/*.proto"
   },
   "license": "GPL-3.0",
   "dependencies": {

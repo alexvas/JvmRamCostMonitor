@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Позволяет запускать вручную
 
 jobs:
-  build-gradle:
+  build-minified-jar:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,20 +25,119 @@ jobs:
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew proguardMinify
+
+      - name: Upload minified JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-ram-cost-minified-jar
+          path: dist-app-backend/build/minified/jvm-ram-cost.jar
+          retention-days: 1
+
+  build-ubuntu:
+    needs: [build-minified-jar]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download minified JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jvm-ram-cost-minified-jar
+          path: ./dist-app-backend/build/minified/
+     
+      - name: Yarn install
+        run: |
+          yarn install
+
+      - name: Generate protobuf files for TypeScript (Linux)
+        run: |
+          yarn proto:gen
+      
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Embed app version into tauri.conf.json
+        run: |
+          echo '{"version": "${{ steps.version.outputs.version }}"}' > /tmp/tauri-versioned.conf.json
+
+      - name: Build Tauri application
+        run: |
+          yarn tauri build --no-bundle
+
+      - name: Package Tauri application into DEB
+        run: |
+          yarn tauri bundle --bundles deb -c /tmp/tauri-versioned.conf.json
 
       - name: Upload distribution artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: gradle-distributions
-          path: |
-            app-backend/build/distributions/*.zip
-            app-backend/build/distributions/*.tar
+          name: jvm-ram-cost-tauri-deb
+          path: src-tauri/target/release/bundle/deb/jvm-ram-cost_*.deb
+          retention-days: 1
+
+  build-windows:
+    needs: [build-minified-jar]
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download minified JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jvm-ram-cost-minified-jar
+          path: ./dist-app-backend/build/minified/
+     
+      - name: Yarn install
+        run: |
+          yarn install
+
+      - name: Generate protobuf files for TypeScript (Windows)
+        run: |
+          yarn proto:gen
+      
+      - name: Get version from tag
+        id: version
+        run: |
+          $VERSION = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          echo "version=$VERSION" >> $env:GITHUB_OUTPUT
+          $TAG_NAME = $env:GITHUB_REF -replace 'refs/tags/', ''
+          echo "tag_name=$TAG_NAME" >> $env:GITHUB_OUTPUT
+
+      - name: Embed app version into tauri.conf.json
+        run: |
+          $json = @{version = "${{ steps.version.outputs.version }}" } | ConvertTo-Json -Compress
+          $json | Out-File -FilePath "$env:TEMP\tauri-versioned.conf.json" -Encoding utf8
+
+      - name: Build Tauri application
+        run: |
+          yarn tauri build --no-bundle
+
+      - name: Package Tauri application into MSI
+        run: |
+          yarn tauri bundle --bundles msi -c $env:TEMP\tauri-versioned.conf.json
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-ram-cost-tauri-msi
+          path: src-tauri/target/release/bundle/msi/jvm-ram-cost_*.msi
           retention-days: 1
 
   release:
     name: Create Release
-    needs: [build-gradle]
+    needs: [build-ubuntu, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -55,14 +154,6 @@ jobs:
           TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
       
-      - name: Setup GitHub CLI
-        run: |
-          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          && sudo apt update \
-          && sudo apt install gh -y  
       - name: Delete existing release if present
         run: |
           echo "Checking for existing release: ${{ steps.version.outputs.tag_name }}"
@@ -76,33 +167,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Download Gradle distribution artifact
+      - name: Download Tauri DEB artifact
         uses: actions/download-artifact@v4
         with:
-          name: gradle-distributions
-          path: ./build/distributions
+          name: jvm-ram-cost-tauri-deb
+          path: ./distro/
       
-      - name: Rename distribution files with version
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          FROM=app-backend
-          TO=JvmRamCost
-          cd build/distributions
-          if [ -f $FROM.zip ]; then
-            mv $FROM.zip "${TO}-${VERSION}.zip"
-            echo "Renamed $FROM.zip to ${TO}-${VERSION}.zip"
-          fi
-          if [ -f $FROM.tar ]; then
-            mv $FROM.tar "${TO}-${VERSION}.tar"
-            echo "Renamed $FROM.tar to ${TO}-${VERSION}.tar"
-          fi
-      
+      - name: Download Tauri MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jvm-ram-cost-tauri-msi
+          path: ./distro/
+            
       - name: Check files and prepare release
         id: check_files
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          echo "Available files in distro:"
+          ls -la distro/
           FILES=""
-          for file in "build/distributions/JvmRamCost-${VERSION}.zip" "build/distributions/JvmRamCost-${VERSION}.tar"; do
+          for file in distro/*.deb distro/*.msi; do
             if [ -f "$file" ]; then
               FILES="${FILES}${file}"$'\n'
             fi
@@ -111,25 +194,23 @@ jobs:
           echo "$FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           echo "Files to upload:"
-          echo "$FILES"  
+          echo "$FILES"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: Release ${{ steps.version.outputs.version }}
           body: |
-            ## JvmRamCost ${{ steps.version.outputs.version }}  
+            ## JVM RAM Cost ${{ steps.version.outputs.version }}  
             ### Установка  
             **Debian/Ubuntu:**
+            Скачайте `.deb` файл из раздела Assets и установите:
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCost-${{ steps.version.outputs.version }}.tar
-            sudo tar xf JvmRamCost-${{ steps.version.outputs.version }}.tar
+            sudo dpkg -i jvm-ram-cost_*.deb
             ```  
             **Windows:**
-            ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/JvmRamCost-${{ steps.version.outputs.version }}.zip
-            unzip JvmRamCost-${{ steps.version.outputs.version }}.zip
-            ```
+            Скачайте `.msi` файл из раздела Assets и запустите установщик.
           files: ${{ steps.check_files.outputs.files }}
           draft: false
           prerelease: false
