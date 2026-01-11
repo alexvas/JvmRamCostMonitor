@@ -155,6 +155,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Set PROTOC environment variable
+        run: |
+          $protocPath = Resolve-Path "node_modules\.bin\protoc.exe" | Select-Object -ExpandProperty Path
+          Write-Host "PROTOC=$protocPath" >> $env:GITHUB_ENV
+          Write-Host "Found protoc at: $protocPath"
+
       - name: Build Tauri application
         run: |
           yarn tauri build --no-bundle
