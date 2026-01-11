@@ -32,8 +32,8 @@ jobs:
         with:
           name: gradle-distributions
           path: |
-            build/distributions/*.zip
-            build/distributions/*.tar
+            app-backend/build/distributions/*.zip
+            app-backend/build/distributions/*.tar
           retention-days: 1
 
   release:
@@ -85,14 +85,16 @@ jobs:
       - name: Rename distribution files with version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          FROM=app-backend
+          TO=JvmRamCost
           cd build/distributions
-          if [ -f JvmRamCost.zip ]; then
-            mv JvmRamCost.zip "JvmRamCost-${VERSION}.zip"
-            echo "Renamed JvmRamCost.zip to JvmRamCost-${VERSION}.zip"
+          if [ -f $FROM.zip ]; then
+            mv $FROM.zip "${TO}-${VERSION}.zip"
+            echo "Renamed $FROM.zip to ${TO}-${VERSION}.zip"
           fi
-          if [ -f JvmRamCost.tar ]; then
-            mv JvmRamCost.tar "JvmRamCost-${VERSION}.tar"
-            echo "Renamed JvmRamCost.tar to JvmRamCost-${VERSION}.tar"
+          if [ -f $FROM.tar ]; then
+            mv $FROM.tar "${TO}-${VERSION}.tar"
+            echo "Renamed $FROM.tar to ${TO}-${VERSION}.tar"
           fi
       
       - name: Check files and prepare release

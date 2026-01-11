@@ -29,7 +29,7 @@ protobuf {
 }
 
 application {
-    mainClass = 'jvmram.backend.JvmRunCostMonitorMain'
+    mainClass = 'jvmram.backend.JvmRunCost'
 }
 
 distributions {

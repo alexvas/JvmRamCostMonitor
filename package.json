@@ -10,7 +10,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "WEBKIT_DISABLE_COMPOSITING_MODE=1 tauri",
-    "proto:gen": "./scripts/proto-gen.sh"
+    "proto:gen": "./scripts/proto-gen.sh",
+    "proto:gen:win": ".scripts/proto-gen.bat"
   },
   "license": "GPL-3.0",
   "dependencies": {

@@ -23,6 +23,7 @@ bin/
 node_modules
 /build
 /.svelte-kit
+/frontend-dist
 /package
 .env
 .env.*
