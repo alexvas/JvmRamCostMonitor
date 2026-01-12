@@ -3,15 +3,41 @@ import {
     SetVisibleRequest,
     SetInvisibleRequest,
     ApplicableMetricsResponse,
-    type GraphPoint as ProtoGraphPoint,
     type GraphQueues,
-    type JvmProcessListResponse
+    type JvmProcessListResponse,
+    Pid
 } from "$lib/generated/proto/protocol";
 import type { Timestamp } from "$lib/generated/google/protobuf/timestamp";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { ProcInfo } from "./ProcHandle";
-import { MetricType, type GraphPoint } from "./GraphStore";
+import { MetricType } from "./GraphStore";
+
+/**
+ * Рекурсивно преобразует все BigInt значения в объекте в строки.
+ * Это необходимо для сериализации объектов с BigInt через JSON.stringify.
+ */
+function bigIntToString<T>(value: T): any {
+    if (typeof value === "bigint") {
+        return BigInt(Number.MIN_SAFE_INTEGER) <= value && value <= BigInt(Number.MAX_SAFE_INTEGER)
+            ? Number(value)
+            : value.toString();
+    }
+    if (value === null || value === undefined) {
+        return value;
+    }
+    if (Array.isArray(value)) {
+        return value.map(bigIntToString);
+    }
+    if (typeof value === "object") {
+        const result: any = {};
+        for (const [key, val] of Object.entries(value)) {
+            result[key] = bigIntToString(val);
+        }
+        return result;
+    }
+    return value;
+}
 
 /** Преобразование из protobuf MetricType в наш MetricType */
 function fromProtoMetricType(protoType: ProtoMetricType): MetricType {
@@ -38,6 +64,11 @@ export async function setInvisible(mt: MetricType) {
     await invoke("set_invisible", { request });
 }
 
+export async function triggerGc(pid: bigint) {
+    const request = Pid.create({ pid: pid });
+    const serializableRequest = bigIntToString(request);
+    await invoke("trigger_gc", { request: serializableRequest });
+}
 
 export async function getApplicableMetrics() {
     const response = await invoke<ApplicableMetricsResponse>(

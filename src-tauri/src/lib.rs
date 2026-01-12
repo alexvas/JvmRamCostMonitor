@@ -227,6 +227,16 @@ async fn set_following_pids(
     Ok(())
 }
 
+#[tauri::command]
+async fn trigger_gc(
+    state: State<'_, Arc<AppState>>,
+    request: Jmvram::Pid,
+) -> Result<(), Error> {
+    let mut client = get_client(&state).await;
+    client.trigger_gc(request).await?;
+    Ok(())
+}
+
 use tauri::{AppHandle, Emitter};
 
 use crate::google::protobuf::Empty;
@@ -348,6 +358,7 @@ pub fn run() {
             set_visible,
             set_invisible,
             set_following_pids,
+            trigger_gc,
         ])
         .on_window_event(|_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
