@@ -2,7 +2,10 @@
   <h3 class="card-title">Metrics</h3>
   <div class="checkbox-group">
     {#each allMetricTypes as mt}
-      <label class="checkbox-label">
+      <label
+        class="checkbox-label"
+        style="background-color: {backgroundColors.get(mt)}"
+      >
         <input
           type="checkbox"
           name="metric-types"
@@ -23,6 +26,8 @@
     setInvisible,
     getApplicableMetrics,
   } from "$lib/ProtoAdapter";
+  import { graphMetaMap } from "$lib/GraphMeta";
+  import { getContext } from "svelte";
 
   let { allMetricTypes, visibleMetrics } = $props();
 
@@ -46,6 +51,16 @@
     }
     oldVisibleMetrics = $state.snapshot(newVal) as MetricType[];
   });
+  let prefersDark = getContext<() => boolean>("prefersDark")!();
+
+  const backgroundColors = new Map<MetricType, string>();
+  Object.values(MetricType)
+    .filter((v): v is MetricType => typeof v === "number")
+    .forEach((metricType: MetricType) => {
+      const meta = graphMetaMap[metricType];
+      const color = prefersDark ? meta.color_dark : meta.color_light;
+      backgroundColors.set(metricType, color);
+    });
 </script>
 
 <style>
@@ -60,7 +75,8 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 4px 8px;
+    border-radius: 4px;
     user-select: none;
   }
 
